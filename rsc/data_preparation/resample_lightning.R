@@ -15,6 +15,7 @@ dst <- "/lud11/poppman/data/bff/dat/lud11/static/WWLLN/Lightning_clim_MODIS.tif"
 if (!file.exists(dst)) {
   print("Resampling lightning climatology...")
     terra::rast(f_clm) %>%
+    terra::app(fun = sum) %>%
     terra::resample(fire, method = "bilinear") %>%
     terra::writeRaster(
       filename = dst,
@@ -29,12 +30,14 @@ layer_dates <- terra::time(raster_brick)
 layer_years <- lubridate::year(as.Date(layer_dates))
 layer_months <- lubridate::month(as.Date(layer_dates))
 
+years <- max(2002, min(layer_years)):min(max(layer_years), 2024)
+
 pb <- progress_bar$new(
   format = "  Progress [:bar] :percent in :elapsed",
-  total = length(files), clear = FALSE, width = 60
+  total = length(years), clear = FALSE, width = 60
 )
 
-for (year in max(2002, min(layer_years)):min(max(layer_years), 2024)) {
+for (year in years) {
   print(paste("\nCreating year", year))
   cat("\nEntire year")
   layer_subset <- raster_brick[[which(layer_years == year)]]
