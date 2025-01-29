@@ -40,6 +40,17 @@ for (year in 2002:2018) {
           overwrite = TRUE
           )
   }
+  
+  dst <- gsub("spimin_", "spi06_", dst)
+  if (!file.exists(dst)) {
+    terra::rast(file_subset[grepl(pattern = "_06_", file_subset)]) %>%
+      terra::resample(fire, method = "near") %>%
+      terra::writeRaster(
+          dst,
+          overwrite = TRUE
+          )
+  }
+
   dst <- gsub("spimin_", "spi12_", dst)
   if (!file.exists(dst)) {
     terra::rast(file_subset[grepl(pattern = "_12_", file_subset)]) %>%
