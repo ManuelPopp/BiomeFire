@@ -34,7 +34,7 @@ pb <- progress_bar$new(
   total = length(files), clear = FALSE, width = 60
 )
 
-for (year in max(2002, min(layer_years)):2018) {
+for (year in max(2002, min(layer_years)):min(max(layer_years), 2024)) {
   print(paste("\nCreating year", year))
   cat("\nEntire year")
   layer_subset <- raster_brick[[which(layer_years == year)]]
