@@ -31,7 +31,7 @@ download <- function(url_list, out_dir, overwrite = FALSE) {
     file_name <- basename(url)
     dst <- file.path(out_dir, file_name)
     if (!file.exists(dst) | overwrite) {
-      GET(url, write_disk(dst, overwrite = TRUE))
+      httr::GET(url, httr::write_disk(dst, overwrite = TRUE))
     }
     pb$tick()
   }
