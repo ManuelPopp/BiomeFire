@@ -8,7 +8,7 @@ if (Sys.info()["sysname"] == "Windows") {
 
 dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
-dir_WWLLN <- file.path(dir_lud, "static", "WWLLN")
+dir_WWLLN <- file.path(dir_lud, "WWLLN")
 
 url <- "https://store.pangaea.de/Publications/KaplanJ-LauH_2019/WWLLN.zip"
 dst <- file.path(dir_WWLLN, "WWLLN.zip")
