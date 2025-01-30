@@ -178,9 +178,9 @@ predictor_names <- sub(
 names(predictors) <- predictor_names
 
 # Create combined mask
-print("Creating predictor mask...")
 f_pred_mask <- file.path(dir_lud, "masks", "predictor_nan.tif")
 if (!file.exists(f_pred_mask) | recalculate_pred_mask) {
+  print("Creating predictor mask...")
   pred_nan_mask <- predictors %>%
     terra::app(fun = "anyNA") %>%
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
@@ -194,6 +194,7 @@ if (!file.exists(f_pred_mask) | recalculate_pred_mask) {
       overwrite = TRUE
     )
 } else {
+  print("Loading predictor mask...")
   pred_nan_mask <- terra::rast(f_pred_mask)
 }
 
