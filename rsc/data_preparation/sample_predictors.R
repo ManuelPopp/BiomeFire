@@ -90,14 +90,18 @@ wsl_cols <- c(
 d_fire <- file.path(dir_ann, "fire_resampled_MODIS")
 d_npp <- file.path(dir_ann, "npp_before_resampled_MODIS")
 d_pr <- file.path(dir_ann, "pr_resampled_MODIS")
+d_spi06 <- file.path(dir_ann, "spi06_resampled_MODIS")
 d_spi12 <- file.path(dir_ann, "spi12_resampled_MODIS")
 d_spimin <- file.path(dir_ann, "spimin_resampled_MODIS")
+d_spei06 <- file.path(dir_ann, "spei06_resampled_MODIS")
 d_spei12 <- file.path(dir_ann, "spei12_resampled_MODIS")
 d_speimin <- file.path(dir_ann, "speimin_resampled_MODIS")
 d_swb <- file.path(dir_ann, "swb_resampled_MODIS")
 d_tasmean <- file.path(dir_ann, "tasmean_resampled_MODIS")
 d_vpdmean <- file.path(dir_ann, "vpdmean_resampled_MODIS")
 d_vpdmax <- file.path(dir_ann, "vpdmax_resampled_MODIS")
+d_lightning <- file.path(dir_ann, "lightning_resampled_MODIS")
+d_lightning_equinox <- file.path(dir_ann, "lightning_equinox_resampled_MODIS")
 
 # Response
 f_fire <- dfiles(directory = d_fire, year = year, pattern = ".tif")
@@ -105,14 +109,18 @@ f_fire <- dfiles(directory = d_fire, year = year, pattern = ".tif")
 # Predictors
 f_predictors <- files(
   directories = c(
-    d_npp, d_pr, d_spi12, d_spimin, d_spei12, d_speimin, d_swb, d_tasmean,
-    d_vpdmean, d_vpdmax
+    d_npp, d_pr,
+    d_spi06, d_spi12, d_spimin,
+    d_spei06, d_spei12, d_speimin,
+    d_swb, d_tasmean,
+    d_vpdmean, d_vpdmax,
+    d_lightning, d_lightning_equinox
   ), year = year, pattern = ".tif"
 )
 
 f_predictors <- c(
   f_predictors,
-  file.path(dir_lud, "static", "WWLLN", "Lightning_sum_MODIS.tif"),
+  file.path(dir_lud, "static", "WWLLN", "Lightning_clim_MODIS.tif"),
   file.path(
     dir_lud, "static", "GlobalHumanModification", "gHM_resampled_MODIS.tif"
   )
