@@ -88,7 +88,8 @@ metrics <- function(predictions, labels, name = NA) {
       kappa = cm$overall["Kappa"],
       precision = TP / (TP + FP),
       recall = TP / (TP + FN),
-      f1_score = 2 * (precision * recall) / (precision + recall)
+      F1 = 2 * (precision * recall) / (precision + recall),
+      TSS = cm$byClass["Sensitivity"] + cm$byClass["Specificity"] - 1
     )
   )
 }
@@ -116,7 +117,7 @@ loyo_cv <- function(in_data, model_formula, test_year) {
   test_data <- test_data %>%
     dplyr::mutate(
       pred_prob = stats::predict(mod, newdata = test_data, type = "response")
-      )%>%
+      ) %>%
     dplyr::mutate(
       pred_class = factor(ifelse(pred_prob > 0.5, 1, 0), levels = c(0, 1))
       )
@@ -228,6 +229,7 @@ modelled_response <- function(model_list, data, variable) {
 #>----------------------------------------------------------------------------<|
 #> Settings
 recalculate <- FALSE
+set.seed(42)
 
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
@@ -267,7 +269,11 @@ for (f_chunk in f_data_chunks) {
 }
 
 data <- do.call(rbind, chunks) %>%
-  dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.)))
+  dplyr::select(-c("Lightning", "LightningEquinox")) %>%
+  dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
+  dplyr::group_by(year) %>%
+  dplyr::sample_n(250, replace = FALSE) %>%
+  dplyr::ungroup()
 
 rm(chunks)
 
@@ -283,8 +289,8 @@ corrplot::corrplot(
 
 predictors <- names(data)[-c(1, 2, ncol(data) - 3)]
 
-predictors <- c("tasmean", "swb", "spimin", "vpdmax", "Lightning", "gHM")
-predictors <- c("spimin", "swb", "vpdmax", "tasmean", "Lightning")
+predictors <- c("tasmean", "swb", "spimin", "vpdmax", "LightningEquinox", "gHM")
+predictors <- c("spimin", "swb", "vpdmax", "tasmean", "Lightning_clim")
 
 plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
 
@@ -314,32 +320,32 @@ mod_full <- mgcv::gam(
   #select = TRUE
 )
 
-summary(mod_full)
 stats::anova(mod_full, mod_null)
 mgcv::gam.check(mod_full)
-ecospat::ecospat.adj.D2.glm(mod_full)
+mod_summary <- summary(mod_full)
+expl_deviance <- ecospat::ecospat.adj.D2.glm(mod_full)
 
-scope_list <- lapply(
-  predictors,
-  FUN = function(x){
-    form <- as.formula(
-      paste(
-        "~ 1", x, sprintf("s(%s, k = 3)", x), sprintf("s(%s, k = 5)", x),
-        sep = " + "
-        )
-      )
-    return(form)
-    }
-  )
-
-names(scope_list) <- predictors
-
-mod_stepwise <- gam::step.Gam(# Note: The data.frame must not be named "df" for some reason!
-  mod_null, scope = scope_list,
-  direction = "both", parallel = TRUE
-)
-
-summary(mod_stepwise)# R2 0.357
+# scope_list <- lapply(
+#   predictors,
+#   FUN = function(x){
+#     form <- as.formula(
+#       paste(
+#         "~ 1", x, sprintf("s(%s, k = 3)", x), sprintf("s(%s, k = 5)", x),
+#         sep = " + "
+#         )
+#       )
+#     return(form)
+#     }
+#   )
+# 
+# names(scope_list) <- predictors
+# 
+# mod_stepwise <- gam::step.Gam(# Note: The data.frame must not be named "df" for some reason!
+#   mod_null, scope = scope_list,
+#   direction = "both", parallel = TRUE
+# )
+# 
+# summary(mod_stepwise)# R2 0.357
 
 for (p in predictors) {
   frml <- as.formula(
@@ -363,7 +369,7 @@ for (p in predictors) {
 #------------------------------------------------------------------------------|
 #> Check potential issues with the model
 #> 1) Check spatial dependence
-#> 2) Check overfitting
+#> 2) Check over fitting
 #> For both, we use cross-validation
 ## Leave-one-year-out cross-validation
 formula_mod_final <- formula_mod_full
@@ -381,8 +387,19 @@ results <- unique(data$year) %>%
 cat(paste0("\nTemporal blocks (N=", length(unique(data$year)), "):"))
 print(t.test(results$train_kappa, results$test_kappa))
 
+boxplot(
+  results$train_kappa, results$test_kappa,
+  main = paste0(
+    "Leave-one-year-out ",
+    length(unique(data$year)), "-fold temporal block cross-validation"
+  ),
+  xlab = "Data set",
+  ylab = expression("Cohen's"~kappa),
+  names = c("Training", "Test")
+  )
+
 ## Spatial block cross-validation
-n_blocks <- 5
+n_blocks <- 10
 data <- data %>%
   dplyr::mutate(block = ntile(x, n_blocks))
 
@@ -399,6 +416,16 @@ results <- seq(1, n_blocks) %>%
 
 cat(paste0("\nSpatial blocks (N=", n_blocks, "):"))
 print(t.test(results$train_kappa, results$test_kappa))
+
+boxplot(
+  results$train_kappa, results$test_kappa,
+  main = paste0(
+    "Longitudinal bins (N=", n_blocks, ") spatial block cross-validation"
+    ),
+  xlab = "Data set",
+  ylab = expression("Cohen's"~kappa),
+  names = c("Training", "Test")
+)
 
 #------------------------------------------------------------------------------|
 #> Fit models to subsets of the data
@@ -480,3 +507,34 @@ ggplot2::ggsave(
   height = 12,
   width = 8
   )
+
+# Test for temporal structure (how well does a fitted model predict a temporally close vs temporally more distant year)
+years <- unique(data$year)
+out <- data.frame()
+for (year_trn in years[-length(years)]) {
+  for (year_tst in years[which(years != year_trn)]) {
+    mod_trained <- mgcv::gam(
+      formula_mod_full,
+      family = stats::binomial(),
+      data = data[data$year %in% c(year_trn, year_trn + 1),]
+    )
+    
+    tst_df <- data[data$year == year_tst,]
+    tst_df$pred_prob <- stats::predict(
+      mod_trained, type = "response", newdata = tst_df
+      )
+    pred_class <- factor(
+      ifelse(tst_df$pred_prob > 0.5, 1, 0), levels = c(0, 1)
+      )
+    k <- metrics(pred_class, factor(tst_df$fire, levels = c(0, 1)))$kappa
+    out <- rbind(
+      out, data.frame(year_trn = year_trn, year_tst = year_tst, kappa = k)
+      )
+  }
+}
+
+out$diff <- out$year_trn - out$year_tst
+mod <- lm(kappa ~ abs(diff), data = out)
+summary(mod)
+mod_summary
+expl_deviance

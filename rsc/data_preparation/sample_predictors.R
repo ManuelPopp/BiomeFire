@@ -112,7 +112,7 @@ f_predictors <- files(
 
 f_predictors <- c(
   f_predictors,
-  file.path(dir_lud, "static", "WWLLN", "Lightning_sum_MODIS.tif"),
+  file.path(dir_lud, "static", "WWLLN", "Lightning_clim_MODIS.tif"),
   file.path(
     dir_lud, "static", "GlobalHumanModification", "gHM_resampled_MODIS.tif"
   )
