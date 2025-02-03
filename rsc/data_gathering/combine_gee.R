@@ -23,7 +23,13 @@ if (Sys.info()["sysname"] == "Windows") {
   lud11 <- "/lud11"
 }
 
-f_name <- "mixedforest_mask_MODIS.tif"
+## Names to use for ouptut files:
+# "mixedforest_mask_MODIS.tif"
+# "evergr_needleleaf_mask_MODIS.tif"
+# "savanna_mask_MODIS.tif"
+# "steppe_mask_MODIS.tif"
+
+f_name <- "savanna_mask_MODIS.tif"
 dir_gee <- "G:/My Drive/EarthEngineExports"
 files <- list.files(dir_gee, pattern = ".tif", full.names = TRUE)
 
