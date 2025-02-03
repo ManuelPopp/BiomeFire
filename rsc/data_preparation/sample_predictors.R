@@ -77,7 +77,7 @@ dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
-dir_imd <- file.path("/home/poppman", "intermediate_data")
+dir_imd <- file.path(dir_lud, "intermediate_data")
 
 n_samples <- 500
 
@@ -243,5 +243,7 @@ save(
   data,
   file = file.path(
     dir_imd, paste0("annual_predictors_", year, ".Rsave")
-    )
   )
+)
+
+print("Finished.")
