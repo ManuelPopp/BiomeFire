@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 #>------------------------------------<
 ##
-## Script name: Data analysis
+## Script name: Combine rasters
 ##
 ## Author: Manuel R. Popp
 ## Email: manuel.popp@wsl.ch

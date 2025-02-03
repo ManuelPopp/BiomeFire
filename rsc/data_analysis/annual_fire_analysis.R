@@ -48,9 +48,9 @@ import <- function(...) {
 }
 
 import(
-  "terra", "dplyr", "purrr", "tidyterra", "progress", "car", "MASS", "glmtoolbox",
-  "performance", "ggplot2", "RSpectra", "spaMM", "mgcv", "tidyr", "gam",
-  "corrplot", "doParallel", "yardstick", "plotly", "ecospat", "caret",
+  "terra", "dplyr", "purrr", "tidyterra", "progress", "car", "MASS",
+  "glmtoolbox", "performance", "ggplot2", "RSpectra", "spaMM", "mgcv", "tidyr",
+  "gam", "corrplot", "doParallel", "yardstick", "plotly", "ecospat", "caret",
   dependencies = TRUE
 )
 
