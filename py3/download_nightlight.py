@@ -64,11 +64,16 @@ for year in tqdm(unique_years, desc = "Processing Years", leave = True):
 
                 try:
                     with redirect_stdout(devnull), redirect_stderr(devnull):
-                        ds = xr.open_dataset(dst, engine = "rasterio")
+                        ds = xr.open_dataset(
+                            dst,
+                            engine = "rasterio", cache = False, lock = None
+                            )
                         ds.rio.write_crs("EPSG:4326", inplace = True)
                         datasets.append(ds)
                 except Exception as e:
                     print(f"Error processing {dst}: {e}")
+                finally:
+                    ds.close()
         
         with open(os.devnull, "w") as devnull:
             with redirect_stdout(devnull), tqdm(
