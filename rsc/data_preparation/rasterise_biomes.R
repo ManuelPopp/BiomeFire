@@ -69,7 +69,7 @@ f_biomes <- file.path(
 f_fire <- file.path(dir_ann, "fire_resampled_MODIS", "Fire_2001.tif")
 
 # Select biome(s)
-biome_ids <- c(6)
+biome_ids <- c(4)
 
 #>----------------------------------------------------------------------------<|
 #> Load input data

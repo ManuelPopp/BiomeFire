@@ -131,7 +131,8 @@ f_pft <- file.path(
   dir_lud, "masks", "evergr_needleleaf_mask_MODIS.tif"
 )
 
-f_biome <- file.path(dir_lud, "biomes", "Olson_biome_6.tif")
+biome_name <- "Olson_biome_6"
+f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
@@ -239,9 +240,16 @@ cat(
   "\nFire pixels:", length(which(data$fire == 1))
   )
 
+if (!dir.exists(file.path(dir_imd, biome_name))) {
+  dir.create(file.path(dir_imd, biome_name))
+}
+
 save(
   data,
   file = file.path(
+    dir_imd, biome_name, paste0("annual_predictors_", year, ".Rsave")
+    )
+  )
     dir_imd, paste0("annual_predictors_", year, ".Rsave")
   )
 )
