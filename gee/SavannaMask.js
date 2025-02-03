@@ -22,7 +22,7 @@ var targetCRS = 'EPSG:4326';
 // Reproject the image to the target CRS
 var reprojectedBinary = savannaBinary.reproject({
   crs: targetCRS,
-  scale: 500 // Ensure the scale is appropriate for your target CRS
+  scale: 500
 }).uint8();
 
 Map.addLayer(savannaBinary, {
@@ -34,22 +34,22 @@ var ExportRegion = ee.Geometry.Rectangle([-180, -90, 0, 90]);
 Export.image.toDrive({
   image: reprojectedBinary,
   description: 'SavannaBinaryClassification',
-  folder: 'EarthEngineExports', // Optional: specify a folder in your Google Drive
+  folder: 'EarthEngineExports',
   fileNamePrefix: 'savanna_binary',
-  scale: 500, // Scale in meters (MODIS resolution is ~500m)
+  scale: 500,
   crs: targetCRS,
   region: ExportRegion,
-  maxPixels: 1e13 // Adjust as needed for large exports
+  maxPixels: 1e13
 });
 
 var ExportRegion = ee.Geometry.Rectangle([0, -90, 180, 90]);
 Export.image.toDrive({
   image: reprojectedBinary,
   description: 'SavannaBinaryClassification',
-  folder: 'EarthEngineExports', // Optional: specify a folder in your Google Drive
+  folder: 'EarthEngineExports',
   fileNamePrefix: 'savanna_binary',
-  scale: 500, // Scale in meters (MODIS resolution is ~500m)
+  scale: 500,
   crs: targetCRS,
   region: ExportRegion,
-  maxPixels: 1e13 // Adjust as needed for large exports
+  maxPixels: 1e13
 });

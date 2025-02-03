@@ -15,14 +15,14 @@ var needleleafBinary = pft.expression(
 ).updateMask(pft.eq(1));
 
 // Add the binary classification layer to the map
-Map.centerObject(landCover, 3); // Center map on the dataset
+Map.centerObject(landCover, 3);
 
-var targetCRS = 'EPSG:4326'; // Replace with your desired CRS (e.g., 'EPSG:3857')
+var targetCRS = 'EPSG:4326';
 
 // Reproject the image to the target CRS
 var reprojectedBinary = needleleafBinary.reproject({
   crs: targetCRS,
-  scale: 500 // Ensure the scale is appropriate for your target CRS
+  scale: 500
 }).uint8();
 
 Map.addLayer(needleleafBinary, {
@@ -34,22 +34,22 @@ var ExportRegion = ee.Geometry.Rectangle([-180, -90, 0, 90]);
 Export.image.toDrive({
   image: reprojectedBinary,
   description: 'NeedleleafBinaryClassification',
-  folder: 'EarthEngineExports', // Optional: specify a folder in your Google Drive
+  folder: 'EarthEngineExports',
   fileNamePrefix: 'needleevergreen_binary',
-  scale: 500, // Scale in meters (MODIS resolution is ~500m)
+  scale: 500,
   crs: targetCRS,
   region: ExportRegion,
-  maxPixels: 1e13 // Adjust as needed for large exports
+  maxPixels: 1e13
 });
 
 var ExportRegion = ee.Geometry.Rectangle([0, -90, 180, 90]);
 Export.image.toDrive({
   image: reprojectedBinary,
   description: 'NeedleleafBinaryClassification',
-  folder: 'EarthEngineExports', // Optional: specify a folder in your Google Drive
+  folder: 'EarthEngineExports',
   fileNamePrefix: 'needleevergreen_binary',
-  scale: 500, // Scale in meters (MODIS resolution is ~500m)
+  scale: 500,
   crs: targetCRS,
   region: ExportRegion,
-  maxPixels: 1e13 // Adjust as needed for large exports
+  maxPixels: 1e13
 });
