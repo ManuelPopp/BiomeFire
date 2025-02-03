@@ -126,13 +126,23 @@ f_predictors <- c(
   )
 )
 
-# Mask layers
-f_pft <- file.path(
-  dir_lud, "masks", "evergr_needleleaf_mask_MODIS.tif"
-)
-
-biome_name <- "Olson_biome_6"
+biome_name <- "Olson_biome_4"
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
+
+# Mask layers
+if(biome_name == "Olson_biome_4") {
+  pft_maskfile <- "mixedforest_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_6") {
+  pft_maskfile <- "evergr_needleleaf_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_7") {
+  pft_maskfile <- "savanna_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_8") {
+  pft_maskfile <- "steppe_mask_MODIS.tif"
+}
+
+f_pft <- file.path(
+  dir_lud, "masks", pft_maskfile
+)
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
