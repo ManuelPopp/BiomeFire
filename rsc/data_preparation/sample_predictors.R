@@ -206,7 +206,9 @@ if (!file.exists(f_pred_mask) | recalculate_pred_mask) {
     )
 } else {
   print("Loading predictor mask...")
-  pred_nan_mask <- terra::rast(f_pred_mask)
+  pred_nan_mask <- terra::rast(f_pred_mask) %>%
+    terra::extend(extent) %>%
+    terra::crop(extent)
 }
 
 print("Creating combined mask...")
