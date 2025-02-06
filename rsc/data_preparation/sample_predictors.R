@@ -128,7 +128,7 @@ f_predictors <- c(
   )
 )
 
-biome_name <- "Olson_biome_4"
+biome_name <- "Olson_biome_7"
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 # Mask layers
