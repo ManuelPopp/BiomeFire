@@ -17,20 +17,20 @@
 rm(list = ls())
 import <- function(...) {
   #' Import R packages. Install them if necessary.
-  #' 
+  #'
   #' @param ... any argument that can be passed to install.packages.
   #' @details The function installs only packages that are missing. Packages
   #' are loaded.
   #' @examples
   #' # Load packages
   #' import("dplyr", "MASS", "terra", dependencies = TRUE)
-  #' 
+  #'
   #' @seealso \code{\link[base]{install.packages}}
   #' @export
   args <- list(...)
-  packages = args[names(args) == ""]
-  kwargs = args[names(args) != ""]
-  
+  packages <- args[names(args) == ""]
+  kwargs <- args[names(args) != ""]
+
   for (package in packages) {
     if (!require(package, character.only = TRUE)) {
       do.call(install.packages, c(list(package), kwargs))
@@ -64,12 +64,14 @@ dir_ann <- file.path(dir_lud, "annual")
 
 f_biomes <- file.path(
   dir_lud, "biomes", "olson_ecoregions", "wwf_terr_ecos.shp"
-  )
+)
 
 f_fire <- file.path(dir_ann, "fire_resampled_MODIS", "Fire_2001.tif")
 
 # Select biome(s)
 biome_ids <- c(4)
+args <- commandArgs(trailingOnly = TRUE)
+biome_ids <- as.numeric(strsplit(args[1], ",")[[1]])
 
 #>----------------------------------------------------------------------------<|
 #> Load input data
@@ -93,18 +95,19 @@ parts <- lapply(
   X = seq_len(nrow(biome)),
   FUN = rasterise_feature,
   polygons = biome, template = fire
-  )
+)
 
 do.call(
-  terra::mosaic, args = parts
-  ) %>%
+  terra::mosaic,
+  args = parts
+) %>%
   terra::extend(
     fire,
     fill = NA,
     filename = file.path(
       dir_lud, "biomes",
       paste0("Olson_biome_", paste(biome_ids, collapse = "_"), ".tif")
-      ),
+    ),
     datatype = "INT1U",
     overwrite = TRUE
-    )
+  )

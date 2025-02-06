@@ -232,7 +232,7 @@ modelled_response <- function(model_list, data, variable) {
 recalculate <- FALSE
 set.seed(42)
 
-biome <- "Olson_biome_4"
+biome <- "Olson_biome_6"
 
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
@@ -682,9 +682,11 @@ for (i in 1:length(plots)) {
 }
 
 gridded_plot_glmm <- do.call(gridExtra::grid.arrange, plots_glmm)
-# ggplot2::ggsave(
-#   filename = file.path(dir_main, "fig", "Modelled_responses.pdf"),
-#   plot = gridded_plot,
-#   height = 12,
-#   width = 8
-# )
+ggplot2::ggsave(
+  filename = file.path(
+    dir_main, "fig", paste0("Modelled_responses", biome, "_wglmm.pdf")
+    ),
+  plot = gridded_plot_glmm,
+  height = 12,
+  width = 8
+)
