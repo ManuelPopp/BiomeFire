@@ -49,8 +49,9 @@ import <- function(...) {
 
 import(
   "terra", "dplyr", "purrr", "tidyterra", "progress", "car", "MASS",
-  "glmtoolbox", "performance", "ggplot2", "RSpectra", "spaMM", "mgcv", "tidyr",
-  "gam", "corrplot", "doParallel", "yardstick", "plotly", "ecospat", "caret",
+  "glmtoolbox", "performance", "ggplot2", "RSpectra", "spaMM", "ROI.plugin.glpk",
+  "mgcv", "tidyr", "gam", "corrplot", "doParallel", "yardstick", "plotly",
+  "ecospat", "caret", "spdep",
   dependencies = TRUE
 )
 
@@ -231,6 +232,8 @@ modelled_response <- function(model_list, data, variable) {
 recalculate <- FALSE
 set.seed(42)
 
+biome <- "Olson_biome_6"
+
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
   sub_clim <- "chelsa_kg"
@@ -244,6 +247,10 @@ dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
 
+f_biome_map <- file.path(
+  dir_lud, "biomes", "olson_ecoregions", "wwf_terr_ecos.shp"
+  )
+
 n_samples <- 1e3
 
 wsl_cols <- c(
@@ -252,9 +259,22 @@ wsl_cols <- c(
 )
 
 #>----------------------------------------------------------------------------<|
+#> Get biome outlines
+biome_num <- strsplit(biome, split = "_", fixed = TRUE)
+biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
+
+biome_sf <- sf::st_read(f_biome_map) %>%
+  dplyr::filter(
+    BIOME == biome_num
+  ) %>%
+  sf::st_union() %>%
+  sf::st_cast("POLYGON") %>%
+  sf::st_sf()
+
+#>----------------------------------------------------------------------------<|
 #> Load data
 f_data_chunks <- list.files(
-  file.path(dir_lud, "intermediate_data"), pattern = "annual_predictors",
+  file.path(dir_lud, "intermediate_data", biome), pattern = "annual_predictors",
   full.names = TRUE
 )
 
@@ -281,23 +301,81 @@ cat("Data set has", nrow(data), "rows.")
 
 head(data)
 
+# Check for autocorrelation amongst predictors
 cormat <- cor(data[, -c(1, 2, ncol(data))], use = "complete.obs")
 corrplot::corrplot(
   cormat, method = "color", addCoef.col = "black", tl.col = "black",
   tl.cex = 0.8, number.cex = 0.7, diag = FALSE
   )
 
+# Check for spatial autocorrelation
+data_sf <- sf::st_as_sf(data, coords = c("x", "y"), crs = 4326)
+
+while (FALSE) {
+  moran.I <- list()
+  geary.c <- list()
+  knn <- 10
+  
+  for (fid in 1:nrow(biome_sf)) {
+    region <- biome_sf[fid, ]
+    subdata_sf <- data_sf %>%
+      sf::st_intersection(region)
+    
+    if (nrow(subdata_sf) / 3 < knn) {
+      next
+    }
+    
+    coords <- sf::st_coordinates(subdata_sf)
+    nb <- spdep::knn2nb(spdep::knearneigh(coords, k = knn))
+    listw <- spdep::nb2listw(nb, style = "W", zero.policy = TRUE)
+    
+    m.i <- spdep::moran.test(
+      subdata_sf$fire, listw, zero.policy = TRUE
+    )
+    
+    g.c <- spdep::geary.test(
+      subdata_sf$fire, listw, zero.policy = TRUE
+    )
+    
+    moran.I[[length(moran.I) + 1]] <- m.i
+    geary.c[[length(geary.c) + 1]] <- g.c
+  }
+  
+  mis <- unlist(lapply(X = moran.I, FUN = function(x){return(x$p.value)}))
+  gcs <- unlist(lapply(X = geary.c, FUN = function(x){return(x$p.value)}))
+  
+  if(any(mis < 0.05) | any(gcs < 0.05)) {
+    plot(region)
+    plot(
+      sf::st_geometry(subdata_sf),
+      add = TRUE,
+      col = c("blue", "red")[subdata_sf$fire + 1]
+    )
+  } else {
+    break
+  }
+  
+  if (nrow(data_sf) <= 100) {
+    break
+  } else {
+    cat("\nReducing data size to", nrow(data_sf), "data points.")
+  }
+  
+  data_sf <- data_sf[-sample(1:nrow(data_sf), size = 100), ]
+}
+
+# Select predictors
 predictors <- names(data)[-c(1, 2, ncol(data) - 3)]
 
 predictors <- c("tasmean", "swb", "spimin", "vpdmax", "LightningEquinox", "gHM")
 predictors <- c("spimin", "swb", "vpdmax", "tasmean", "Lightning_clim")
 
-plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
+#plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
 
 formula_mod_full <- as.formula(
   paste(
     "fire ~", 
-    paste(sprintf("s(%s, k = 5)", predictors), collapse = " + ")
+    paste(sprintf("s(%s, k = 5)", predictors), collapse = " + ")#, " + s(x, y, k = 30)"
   )
 )
 
@@ -449,7 +527,7 @@ for (model_idx in 1:n_iter) {
   subsdf <- data[subs_sample,]
   
   mod_full_subs <- mgcv::gam(
-    formula_mod_full,
+    formula_mod_final,
     family = stats::binomial(),
     data = subsdf
   )
@@ -538,3 +616,28 @@ mod <- lm(kappa ~ abs(diff), data = out)
 summary(mod)
 mod_summary
 expl_deviance
+
+#-------------------------------------------------------------------------------
+# Spatial GLMM
+ds_trn <- data %>%
+  dplyr::filter(year < 2016)
+
+ds_tst <- data %>%
+  dplyr::filter(year >= 2016)
+
+num_cores <- parallel::detectCores(logical = FALSE)
+mod_glmm_spatial <- spaMM::fitme(
+  fire ~ spimin + tasmean + swb + vpdmax + Matern(1 | x + y),
+  family = binomial(), data = ds_trn, method = "PQL",
+  control.HLfit = list(
+    algebra = "decorr",
+    NbThreads = ifelse(num_cores > 3, num_cores - 2L, 1L)
+  )
+)
+
+
+y_true <- ds_tst$fire
+y_pred <- predict(mod_glmm_spatial, type = "response", newdata = ds_tst)
+y_pred_bool <- as.numeric(y_pred >= 0.5)
+
+length(which(y_true == y_pred_bool)) / length(y_pred_bool)
