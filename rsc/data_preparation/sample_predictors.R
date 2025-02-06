@@ -65,8 +65,6 @@ seed <- 42
 year <- as.numeric(args[1])
 set.seed(year %% seed)
 
-try_save_ram <- TRUE
-
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
   sub_clim <- "chelsa_kg"
@@ -79,7 +77,7 @@ dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
-dir_imd <- file.path(dir_lud, "intermediate_data")
+dir_imd <- file.path("/home/poppman", "intermediate_data")
 
 n_samples <- 500
 
@@ -132,19 +130,12 @@ biome_name <- "Olson_biome_7"
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 # Mask layers
-if(biome_name == "Olson_biome_4") {
-  pft_maskfile <- "mixedforest_mask_MODIS.tif"
-} else if (biome_name == "Olson_biome_6") {
-  pft_maskfile <- "evergr_needleleaf_mask_MODIS.tif"
-} else if (biome_name == "Olson_biome_7") {
-  pft_maskfile <- "savanna_mask_MODIS.tif"
-} else if (biome_name == "Olson_biome_8") {
-  pft_maskfile <- "steppe_mask_MODIS.tif"
-}
-
 f_pft <- file.path(
-  dir_lud, "masks", pft_maskfile
+  dir_lud, "masks", "evergr_needleleaf_mask_MODIS.tif"
 )
+
+biome_name <- "Olson_biome_6"
+f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
@@ -170,7 +161,8 @@ pft_cropped <- terra::crop(pft, extent)
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
 print("Loading predictors...")
-predictors <- terra::rast(f_predictors)
+predictors <- terra::rast(f_predictors) %>%
+  terra::crop(extent)
 
 print("Renaming predictors...")
 predictor_names <- sub(
@@ -210,14 +202,6 @@ if (!file.exists(f_pred_mask) | recalculate_pred_mask) {
   pred_nan_mask <- terra::rast(f_pred_mask)
 }
 
-pred_nan_mask <- pred_nan_mask %>%
-  terra::crop(extent)
-
-if (!try_save_ram) {
-  predictors <- predictors %>%
-    terra::crop(extent)
-}
-
 print("Creating combined mask...")
 mask_combined <- c(biome_cropped, pft_cropped, pred_nan_mask) %>%
   terra::app(fun = "anyNA") %>%
@@ -247,21 +231,8 @@ for (class in c(1, 0)) {
 samples <- terra::vect(do.call(c, sample_list))
 
 # Extract data
-cat("\nExtracting data...")
-if (try_save_ram) {
-  fire_padded <- terra::extend(fire_cropped, predictors)
-  stack <- c(fire_padded, predictors)
-  data_list <- lapply(X = stack, FUN = terra::extract, y = samples, xy = TRUE)
-  data <- do.call(cbind, data_list)
-  names(data) <- gsub(
-    "BurnDate", "fire",
-    make.names(names(data), unique = TRUE)
-    )
-  data <- data[, c("ID", "fire", predictor_names, "x", "y")]
-} else {
-  data <- c(fire_cropped, predictors) %>%
-    terra::extract(y = samples, xy = TRUE)
-}
+data <- c(fire_cropped, predictors) %>%
+  terra::extract(y = samples, xy = TRUE)
 
 names(data) <- c("ID", "fire", predictor_names, "x", "y")
 
@@ -282,11 +253,3 @@ save(
     dir_imd, biome_name, paste0("annual_predictors_", year, ".Rsave")
     )
   )
-    dir_imd, paste0("annual_predictors_", year, ".Rsave")
-  )
-)
-
-unlink(tempdir(), recursive = TRUE)
-gc()
-
-print("Finished.")

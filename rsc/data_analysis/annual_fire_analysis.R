@@ -580,7 +580,9 @@ for (i in 1:length(predictors)) {
 
 gridded_plot <- do.call(gridExtra::grid.arrange, plots)
 ggplot2::ggsave(
-  filename = file.path(dir_main, "fig", "Modelled_responses.pdf"),
+  filename = file.path(
+    dir_main, "fig", paste0("Modelled_responses", biome, ".pdf")
+    ),
   plot = gridded_plot,
   height = 12,
   width = 8
@@ -625,19 +627,66 @@ ds_trn <- data %>%
 ds_tst <- data %>%
   dplyr::filter(year >= 2016)
 
-num_cores <- parallel::detectCores(logical = FALSE)
-mod_glmm_spatial <- spaMM::fitme(
-  fire ~ spimin + tasmean + swb + vpdmax + Matern(1 | x + y),
-  family = binomial(), data = ds_trn, method = "PQL",
-  control.HLfit = list(
-    algebra = "decorr",
-    NbThreads = ifelse(num_cores > 3, num_cores - 2L, 1L)
+mod_glm <- glm(
+  fire ~ spimin + tasmean + swb + vpdmax,
+  family = binomial(), data = ds_trn
   )
-)
 
+dst_glmm <- file.path(
+  dir_lud, "intermediate_data", biome, "spat_glmm_trn.RData"
+  )
+
+if (file.exists(dst_glmm) & !recalculate) {
+  load(dst_glmm)
+} else {
+  num_cores <- parallel::detectCores(logical = FALSE)
+  mod_glmm_spatial <- spaMM::fitme(
+    fire ~ spimin + tasmean + swb + vpdmax + Matern(1 | x + y),
+    family = binomial(), data = ds_trn, method = "PQL",
+    control.HLfit = list(
+      algebra = "decorr",
+      NbThreads = ifelse(num_cores > 3, num_cores - 2L, 1L)
+    )
+  )
+  
+  save(
+    mod_glmm_spatial,
+    file = dst_glmm
+  )
+}
 
 y_true <- ds_tst$fire
 y_pred <- predict(mod_glmm_spatial, type = "response", newdata = ds_tst)
 y_pred_bool <- as.numeric(y_pred >= 0.5)
 
-length(which(y_true == y_pred_bool)) / length(y_pred_bool)
+met <- metrics(y_pred_bool, y_true)
+met
+
+# GLM
+#  TP    TN    FP    FN accuracy kappa precision recall    F1   TSS
+# 285   264   112    89    0.732 0.464     0.718  0.762 0.739 0.466
+
+# Spatial GLMM
+#  TP    TN    FP    FN accuracy kappa precision recall    F1   TSS
+# 304   293    83    70    0.796 0.592     0.786  0.813 0.799 0.593
+plots_glmm <- list()
+for (i in 1:length(plots)) {
+  pred <- names(plots)[i]
+  
+  resp <- modelled_response(
+    model_list = list(mod_glmm_spatial), data = data, variable = pred
+    )
+  
+  plots_glmm[[pred]] <- plots[[pred]] +
+    ggplot2::geom_line(data = resp, aes(y = median))
+}
+
+gridded_plot_glmm <- do.call(gridExtra::grid.arrange, plots_glmm)
+ggplot2::ggsave(
+  filename = file.path(
+    dir_main, "fig", paste0("Modelled_responses", biome, "_wglmm.pdf")
+    ),
+  plot = gridded_plot_glmm,
+  height = 12,
+  width = 8
+)
