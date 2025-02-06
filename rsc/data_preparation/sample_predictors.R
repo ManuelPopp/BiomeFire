@@ -77,7 +77,7 @@ dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
-dir_imd <- file.path("/home/poppman", "intermediate_data")
+dir_imd <- file.path("dir_lud", "intermediate_data")
 
 n_samples <- 500
 
@@ -130,12 +130,19 @@ biome_name <- "Olson_biome_7"
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 # Mask layers
-f_pft <- file.path(
-  dir_lud, "masks", "evergr_needleleaf_mask_MODIS.tif"
-)
+if(biome_name == "Olson_biome_4") {
+  pft_maskfile <- "mixedforest_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_6") {
+  pft_maskfile <- "evergr_needleleaf_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_7") {
+  pft_maskfile <- "savanna_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_8") {
+  pft_maskfile <- "steppe_mask_MODIS.tif"
+}
 
-biome_name <- "Olson_biome_6"
-f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
+f_pft <- file.path(
+  dir_lud, "masks", pft_maskfile
+)
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
@@ -202,6 +209,9 @@ if (!file.exists(f_pred_mask) | recalculate_pred_mask) {
   pred_nan_mask <- terra::rast(f_pred_mask)
 }
 
+pred_nan_mask <- pred_nan_mask %>%
+  terra::crop(extent)
+
 print("Creating combined mask...")
 mask_combined <- c(biome_cropped, pft_cropped, pred_nan_mask) %>%
   terra::app(fun = "anyNA") %>%
@@ -253,3 +263,5 @@ save(
     dir_imd, biome_name, paste0("annual_predictors_", year, ".Rsave")
     )
   )
+
+print("Finished.")
