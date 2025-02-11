@@ -130,8 +130,8 @@ biome_name <- "Olson_biome_7"
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 # Mask layers
-if(biome_name == "Olson_biome_1") {
-  pft_maskfile <- "allforest_mask_MODIS.tif"
+if(biome_name %in% c("Olson_biome_1", "Olson_biome_2")) {
+  pft_maskfile <- "broadmix_mask_MODIS.tif"
 } else if(biome_name == "Olson_biome_4") {
   pft_maskfile <- "mixedforest_mask_MODIS.tif"
 } else if (biome_name == "Olson_biome_6") {
@@ -140,6 +140,8 @@ if(biome_name == "Olson_biome_1") {
   pft_maskfile <- "savanna_mask_MODIS.tif"
 } else if (biome_name == "Olson_biome_8") {
   pft_maskfile <- "steppe_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_12") {
+  pft_maskfile <- "mediterra_mask_MODIS.tif"
 }
 
 f_pft <- file.path(

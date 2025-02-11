@@ -28,10 +28,17 @@ if (Sys.info()["sysname"] == "Windows") {
 # "evergr_needleleaf_mask_MODIS.tif"
 # "savanna_mask_MODIS.tif"
 # "steppe_mask_MODIS.tif"
+# "mediterra_mask_MODIS.tif"
+# "broadmix_mask_MODIS.tif"
 
-f_name <- "savanna_mask_MODIS.tif"
+name_pattern <- "mediterra"
+f_name <- "mediterra_mask_MODIS.tif"
 dir_gee <- "G:/My Drive/EarthEngineExports"
 files <- list.files(dir_gee, pattern = ".tif", full.names = TRUE)
+
+if (!is.na(name_pattern)) {
+  files <- files[which(grepl(name_pattern, files))]
+}
 
 template <- terra::rast(
   file.path(
