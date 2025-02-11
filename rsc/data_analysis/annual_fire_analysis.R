@@ -242,6 +242,7 @@ if (Sys.info()["sysname"] == "Windows") {
   sub_clim <- file.path("lud11", "chelsa_kg")
 }
 
+dir_out <- file.path(dir_main, "out")
 dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
@@ -315,11 +316,11 @@ sample_mindis <- spsurvey::grts(
   )$sites_base$ID
 
 plot(st_geometry(data_sf))
-plot(data_sf[sample_mindist,], col = "red", add = T)
+plot(data_sf[sample_mindis,], col = "red", add = T)
 
 ripleys_K <- spatstat.explore::Kest(
   spatstat.geom::as.ppp(
-    data_sf[sample_mindist,] %>%
+    data_sf[sample_mindis,] %>%
       dplyr::filter(fire == 1) %>%
       sf::st_transform(crs = 3857)
     )
@@ -420,6 +421,14 @@ mgcv::gam.check(mod_full)
 mod_summary <- summary(mod_full)
 expl_deviance <- ecospat::ecospat.adj.D2.glm(mod_full)
 
+dashline <- paste0("#>", paste(rep("-", 60), collapse = ""), "<|")
+sink(file.path(dir_out, paste0(biome, ".txt")))
+cat("Biome:", biome, "\n")
+cat(dashline, "\nFull model summary:\n")
+print(mod_summary)
+cat("\nAdj. explained deviance:", expl_deviance, "\n")
+sink()
+
 # scope_list <- lapply(
 #   predictors,
 #   FUN = function(x){
@@ -481,6 +490,7 @@ results <- unique(data$year) %>%
 
 cat(paste0("\nTemporal blocks (N=", length(unique(data$year)), "):"))
 print(t.test(results$train_kappa, results$test_kappa))
+temporal_block_test_kappa <- mean(results$test_kappa)
 
 boxplot(
   results$train_kappa, results$test_kappa,
@@ -511,6 +521,7 @@ results <- seq(1, n_blocks) %>%
 
 cat(paste0("\nSpatial blocks (N=", n_blocks, "):"))
 print(t.test(results$train_kappa, results$test_kappa))
+spatial_block_test_kappa <- mean(results$test_kappa)
 
 boxplot(
   results$train_kappa, results$test_kappa,
@@ -520,6 +531,15 @@ boxplot(
   xlab = "Data set",
   ylab = expression("Cohen's"~kappa),
   names = c("Training", "Test")
+)
+
+cat(
+  paste0("\n", dashline, "\n"),
+  "Mean kappa\n ----------\nTemporal block CV (leave-one-year-out):",
+  temporal_block_test_kappa,
+  paste0("\nSpatial block CV (", n_blocks, " longitudinal bins):"),
+  spatial_block_test_kappa, "\n",
+  file = file.path(dir_out, paste0(biome, ".txt")), append = TRUE
 )
 
 #------------------------------------------------------------------------------|
@@ -605,6 +625,12 @@ ggplot2::ggsave(
   width = 8
   )
 
+cat(
+  paste0("\n", dashline, "\n"),
+  "Median CV adj. D2: ", median(d2adj),
+  file = file.path(dir_out, paste0(biome, ".txt")), append = TRUE
+  )
+
 # Test for temporal structure (how well does a fitted model predict a temporally close vs temporally more distant year)
 years <- unique(data$year)
 out <- data.frame()
@@ -633,11 +659,10 @@ for (year_trn in years[-length(years)]) {
 out$diff <- out$year_trn - out$year_tst
 mod <- lm(kappa ~ abs(diff), data = out)
 summary(mod)
-mod_summary
-expl_deviance
 
 #-------------------------------------------------------------------------------
 # Spatial GLMM
+stop("Preventing accidential long calculation of Spatial GLMM.")
 ds_trn <- data %>%
   dplyr::filter(year < 2016)
 
