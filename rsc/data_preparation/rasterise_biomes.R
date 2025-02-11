@@ -101,6 +101,7 @@ do.call(
   terra::mosaic,
   args = parts
 ) %>%
+  terra::not.na(falseNA = TRUE) %>%
   terra::extend(
     fire,
     fill = NA,
