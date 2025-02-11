@@ -51,7 +51,7 @@ import(
   "terra", "dplyr", "purrr", "tidyterra", "progress", "car", "MASS",
   "glmtoolbox", "performance", "ggplot2", "RSpectra", "spaMM", "ROI.plugin.glpk",
   "mgcv", "tidyr", "gam", "corrplot", "doParallel", "yardstick", "plotly",
-  "ecospat", "caret", "spdep",
+  "ecospat", "caret", "spdep", "spsurvey",
   dependencies = TRUE
 )
 
@@ -310,6 +310,23 @@ corrplot::corrplot(
 
 # Check for spatial autocorrelation
 data_sf <- sf::st_as_sf(data, coords = c("x", "y"), crs = 4326)
+sample_mindis <- spsurvey::grts(
+  sframe = sf::st_transform(data_sf, 3857), n_base = 100, mindis = 50000
+  )$sites_base$ID
+
+plot(st_geometry(data_sf))
+plot(data_sf[sample_mindist,], col = "red", add = T)
+
+ripleys_K <- spatstat.explore::Kest(
+  spatstat.geom::as.ppp(
+    data_sf[sample_mindist,] %>%
+      dplyr::filter(fire == 1) %>%
+      sf::st_transform(crs = 3857)
+    )
+  )
+
+summary(ripleys_K)
+plot(ripleys_K, main = "Ripley's K")
 
 while (FALSE) {
   moran.I <- list()
@@ -627,17 +644,23 @@ ds_trn <- data %>%
 ds_tst <- data %>%
   dplyr::filter(year >= 2016)
 
+mod_gam <- mgcv::gam(
+  formula_mod_full,
+  family = stats::binomial(),
+  data = ds_trn
+)
+
 mod_glm <- glm(
   fire ~ spimin + tasmean + swb + vpdmax,
   family = binomial(), data = ds_trn
   )
 
-dst_glmm <- file.path(
+dst_glmm_trn <- file.path(
   dir_lud, "intermediate_data", biome, "spat_glmm_trn.RData"
   )
 
-if (file.exists(dst_glmm) & !recalculate) {
-  load(dst_glmm)
+if (file.exists(dst_glmm_trn) & !recalculate) {
+  load(dst_glmm_trn)
 } else {
   num_cores <- parallel::detectCores(logical = FALSE)
   mod_glmm_spatial <- spaMM::fitme(
@@ -651,16 +674,21 @@ if (file.exists(dst_glmm) & !recalculate) {
   
   save(
     mod_glmm_spatial,
-    file = dst_glmm
+    file = dst_glmm_trn
   )
 }
 
 y_true <- ds_tst$fire
-y_pred <- predict(mod_glmm_spatial, type = "response", newdata = ds_tst)
-y_pred_bool <- as.numeric(y_pred >= 0.5)
+y_pred_gam <- predict(mod_gam, type = "response", newdata = ds_tst)
+y_pred_gam_bool <- as.numeric(y_pred_gam >= 0.5)
+y_pred_glm <- predict(mod_glm, type = "response", newdata = ds_tst)
+y_pred_glm_bool <- as.numeric(y_pred_glm >= 0.5)
+y_pred_glmm <- predict(mod_glmm_spatial, type = "response", newdata = ds_tst)
+y_pred_glmm_bool <- as.numeric(y_pred_glmm >= 0.5)
 
-met <- metrics(y_pred_bool, y_true)
-met
+metrics(y_pred_gam_bool, y_true)
+metrics(y_pred_glm_bool, y_true)
+metrics(y_pred_glmm_bool, y_true)
 
 # GLM
 #  TP    TN    FP    FN accuracy kappa precision recall    F1   TSS
@@ -669,17 +697,69 @@ met
 # Spatial GLMM
 #  TP    TN    FP    FN accuracy kappa precision recall    F1   TSS
 # 304   293    83    70    0.796 0.592     0.786  0.813 0.799 0.593
+
+# Add fit to plots
+mod_glm <- glm(
+  fire ~ spimin + tasmean + swb + vpdmax,
+  family = binomial(), data = data
+)
+
+dst_glmm <- file.path(
+  dir_lud, "intermediate_data", biome, "spat_glmm.RData"
+)
+
+if (file.exists(dst_glmm) & !recalculate) {
+  load(dst_glmm)
+} else {
+  num_cores <- parallel::detectCores(logical = FALSE)
+  mod_glmm_spatial <- spaMM::fitme(
+    fire ~ spimin + tasmean + swb + vpdmax + Matern(1 | x + y),
+    family = binomial(), data = data, method = "PQL",
+    control.HLfit = list(
+      algebra = "decorr",
+      NbThreads = ifelse(num_cores > 3, num_cores - 2L, 1L)
+    )
+  )
+  
+  save(
+    mod_glmm_spatial,
+    file = dst_glmm
+  )
+}
+
 plots_glmm <- list()
 for (i in 1:length(plots)) {
   pred <- names(plots)[i]
   
-  resp <- modelled_response(
+  resp_glm <- modelled_response(
+    model_list = list(mod_glm), data = data, variable = pred
+  )
+  
+  resp_glmm <- modelled_response(
     model_list = list(mod_glmm_spatial), data = data, variable = pred
     )
   
   plots_glmm[[pred]] <- plots[[pred]] +
-    ggplot2::geom_line(data = resp, aes(y = median))
+    ggplot2::geom_line(data = resp_glm, aes(y = median), linetype = 2) +
+    ggplot2::geom_line(data = resp_glmm, aes(y = median), linetype = 3)
 }
+
+
+dummy <- ggplot2::ggplot(
+  data = data.frame(
+    x = seq(1, 30), value = seq(1, 30) + rnorm(30),
+    Model = c(
+      "GAM (mult. fit median ± perc.)", "GLM", "Spatial GLMM (1|Matérn)"
+      )
+    ), aes(x = x, y = value)
+  ) +
+  ggplot2::geom_smooth() +
+  ggplot2::geom_line(aes(linetype = Model)) +
+  ggplot2::scale_linetype_manual(values = c(1, 2, 3)) +
+  ggplot2::theme(legend.position = "right") +
+  ggplot2::theme_void()
+
+plots_glmm[["legend"]] <- cowplot::get_legend(dummy)
 
 gridded_plot_glmm <- do.call(gridExtra::grid.arrange, plots_glmm)
 ggplot2::ggsave(
