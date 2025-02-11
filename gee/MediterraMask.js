@@ -8,11 +8,11 @@ var pft = landCover.select('LC_Type2');
 
 // Define the binary classification: Mediterranean vegetation types (classes 2, 4 and 5)
 var mediterraBinary = pft.expression(
-    '(LC >= 6) && (LC <= 10) ? 1 : 0',
+    '(LC >= 1) && (LC <= 10) ? 1 : 0',
     {
       'LC': pft
     }
-).updateMask(pft.gte(6).and(pft.lte(10)));
+).updateMask(pft.gte(1).and(pft.lte(10)));
 
 // Add the binary classification layer to the map
 Map.centerObject(landCover, 3);
