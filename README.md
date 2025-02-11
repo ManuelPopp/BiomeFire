@@ -13,7 +13,7 @@ Table 1: Terrestrial biomes following Olson et al. (2001). University of Marylan
 | 6        | Boreal Forests/Taiga                                     | ENF, DNF¹                             |
 | 7        | Tropical & Subtropical Grasslands, Savannas & Shrublands | CS, OS, WS, S, G                      |
 | 8        | Temperate Grasslands, Savannas & Shrublands              | CS, OS, WS, S, G                      |
-| 9        | Flooded Grasslands & Savannas                            | CS, OS, WS, S, G                      |
+| 9        | Flooded Grasslands & Savannas²                           | CS, OS, WS, S, G                      |
 | 10       | Montane Grasslands & Shrublands                          | CS, OS, G                             |
 | 11       | Tundra                                                   | CS, OS, G, PW                         |
 | 12       | Mediterranean Forests, Woodlands & Scrub                 | ENF, EBF, DNF, DBF, MF, CD, OS, WS, S |
