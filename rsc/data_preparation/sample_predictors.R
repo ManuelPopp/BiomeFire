@@ -134,12 +134,12 @@ if(biome_name %in% c("Olson_biome_1", "Olson_biome_2")) {
   pft_maskfile <- "broadmix_mask_MODIS.tif"
 } else if(biome_name == "Olson_biome_4") {
   pft_maskfile <- "mixedforest_mask_MODIS.tif"
-} else if (biome_name == "Olson_biome_6") {
+} else if (
+  biome_name %in% c("Olson_biome_2", "Olson_biome_5", "Olson_biome_6")
+  ) {
   pft_maskfile <- "evergr_needleleaf_mask_MODIS.tif"
-} else if (biome_name == "Olson_biome_7") {
+} else if (biome_name %in% c("Olson_biome_7", "Olson_biome_8")) {
   pft_maskfile <- "savanna_mask_MODIS.tif"
-} else if (biome_name == "Olson_biome_8") {
-  pft_maskfile <- "steppe_mask_MODIS.tif"
 } else if (biome_name == "Olson_biome_12") {
   pft_maskfile <- "mediterra_mask_MODIS.tif"
 }
