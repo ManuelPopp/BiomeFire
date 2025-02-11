@@ -6,8 +6,8 @@ Table of biomes following Olson et al. (2001). University of Maryland (UMD) clas
 | 2        | Tropical & Subtropical Dry Broadleaf Forests             | EBF, DBF, MF                          |
 | 3        | Tropical & Subtropical Coniferous Forests                | ENF, DNF                              |
 | 4        | Temperate Broadleaf & Mixed Forests                      | DBF, MF                               |
-| 5        | Temperate Coniferous Forests                             | ENF, DNF[^1]                          |
-| 6        | Boreal Forests/Taiga                                     | ENF, DNF[^1]                          |
+| 5        | Temperate Coniferous Forests                             | ENF, DNF [^1]                         |
+| 6        | Boreal Forests/Taiga                                     | ENF, DNF [^1]                         |
 | 7        | Tropical & Subtropical Grasslands, Savannas & Shrublands | CS, OS, WS, S, G                      |
 | 8        | Temperate Grasslands, Savannas & Shrublands              | CS, OS, WS, S, G                      |
 | 9        | Flooded Grasslands & Savannas                            | CS, OS, WS, S, G                      |
