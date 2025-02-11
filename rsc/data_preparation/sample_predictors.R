@@ -130,7 +130,9 @@ biome_name <- "Olson_biome_7"
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 # Mask layers
-if(biome_name == "Olson_biome_4") {
+if(biome_name == "Olson_biome_1") {
+  pft_maskfile <- "allforest_mask_MODIS.tif"
+} else if(biome_name == "Olson_biome_4") {
   pft_maskfile <- "mixedforest_mask_MODIS.tif"
 } else if (biome_name == "Olson_biome_6") {
   pft_maskfile <- "evergr_needleleaf_mask_MODIS.tif"
