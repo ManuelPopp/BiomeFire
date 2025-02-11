@@ -7,7 +7,7 @@ Table 1: Terrestrial biomes following Olson et al. (2001). University of Marylan
 |----------|----------------------------------------------------------|---------------------------------------|
 | 1        | Tropical & Subtropical Moist Broadleaf Forests           | EBF, DBF, MF                          |
 | 2        | Tropical & Subtropical Dry Broadleaf Forests             | EBF, DBF, MF                          |
-| 3        | Tropical & Subtropical Coniferous Forests                | ENF, DNF                              |
+| 3        | Tropical & Subtropical Coniferous Forests                | ENF                                   |
 | 4        | Temperate Broadleaf & Mixed Forests                      | DBF, MF                               |
 | 5        | Temperate Coniferous Forests                             | ENF, DNF¹                             |
 | 6        | Boreal Forests/Taiga                                     | ENF, DNF¹                             |
