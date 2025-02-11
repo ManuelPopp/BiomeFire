@@ -6,13 +6,13 @@ var landCover = ee.ImageCollection('MODIS/006/MCD12Q1')
 // Select the Plant Functional Types (PFT) layer
 var pft = landCover.select('LC_Type2');
 
-// Define the binary classification: Evergreen Needleleaf forests (class 1)
+// Define the binary classification: Deciduous Needleleaf forests (class 3)
 var needleleafBinary = pft.expression(
-    'LC == 1 ? 1 : 0',
+    'LC == 3 ? 1 : 0',
     {
       'LC': pft
     }
-).updateMask(pft.eq(1));
+).updateMask(pft.eq(3));
 
 // Add the binary classification layer to the map
 Map.centerObject(landCover, 3);
@@ -33,9 +33,9 @@ Map.addLayer(needleleafBinary, {
 var ExportRegion = ee.Geometry.Rectangle([-180, -90, 0, 90]);
 Export.image.toDrive({
   image: reprojectedBinary,
-  description: 'NeedleleafBinaryClassification',
+  description: 'NeedledecidBinaryClassification',
   folder: 'EarthEngineExports',
-  fileNamePrefix: 'needleevergreen_binary1',
+  fileNamePrefix: 'needledecid_binary1',
   scale: 500,
   crs: targetCRS,
   region: ExportRegion,
@@ -45,9 +45,9 @@ Export.image.toDrive({
 var ExportRegion = ee.Geometry.Rectangle([0, -90, 180, 90]);
 Export.image.toDrive({
   image: reprojectedBinary,
-  description: 'NeedleleafBinaryClassification',
+  description: 'NeedledecidBinaryClassification',
   folder: 'EarthEngineExports',
-  fileNamePrefix: 'needleevergreen_binary2',
+  fileNamePrefix: 'needleedecid_binary2',
   scale: 500,
   crs: targetCRS,
   region: ExportRegion,
