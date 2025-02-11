@@ -6,13 +6,13 @@ var landCover = ee.ImageCollection('MODIS/006/MCD12Q1')
 // Select the University of Maryland (UMD) layer
 var pft = landCover.select('LC_Type2');
 
-// Define the binary classification: Mediterranean vegetation types (classes 2, 4 and 5)
+// Define the binary classification: Mediterranean vegetation types (classes 1 to 9)
 var mediterraBinary = pft.expression(
-    '(LC >= 1) && (LC <= 10) ? 1 : 0',
+    '(LC >= 1) && (LC <= 9) ? 1 : 0',
     {
       'LC': pft
     }
-).updateMask(pft.gte(1).and(pft.lte(10)));
+).updateMask(pft.gte(1).and(pft.lte(9)));
 
 // Add the binary classification layer to the map
 Map.centerObject(landCover, 3);
@@ -35,7 +35,7 @@ Export.image.toDrive({
   image: reprojectedBinary,
   description: 'MediterraneanBinaryClassification',
   folder: 'EarthEngineExports',
-  fileNamePrefix: 'mediterranean_binary',
+  fileNamePrefix: 'mediterranean_binary1',
   scale: 500,
   crs: targetCRS,
   region: ExportRegion,
@@ -47,7 +47,7 @@ Export.image.toDrive({
   image: reprojectedBinary,
   description: 'MediterraneantBinaryClassification',
   folder: 'EarthEngineExports',
-  fileNamePrefix: 'mediterranean_binary',
+  fileNamePrefix: 'mediterranean_binary2',
   scale: 500,
   crs: targetCRS,
   region: ExportRegion,
