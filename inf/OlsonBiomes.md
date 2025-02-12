@@ -1,4 +1,4 @@
-Table 1: Terrestrial biomes following Olson et al. (2001). University of Maryland (UMD) classes were used as classified by the MODIS Collection 6.1 (C61) Land Cover Type Product and are here abbreviated as follows: ENF = Evergreen Needleleaf Forests, EBF = Evergreen Broadleaf Forests, DNF = Deciduous Needleleaf Forests, DBF = Deciduous Broadleaf Forests, MF = Mixed Forests, CS = Closed Shrublands, OS = Open Shrublands, WS = Woody Savannas, S = Savannas, G = Grasslands, PW = Permanent Wetlands, B = Barren. Other classes were not used.
+Table 1: Terrestrial biomes following Olson et al. (2001). University of Maryland (UMD) classes were used as classified by the MODIS Collection 6.1 (C61) Land Cover Type Product and are here abbreviated as follows: ENF = Evergreen Needleleaf Forests, EBF = Evergreen Broadleaf Forests, DNF = Deciduous Needleleaf Forests, DBF = Deciduous Broadleaf Forests, MF = Mixed Forests, CS = Closed Shrublands, OS = Open Shrublands, WS = Woody Savannas, S = Savannas, G = Grasslands, B = Barren. Other classes were not used.
 
 | Biome ID | Biome Name                                               | UMD Classes                           |
 |----------|----------------------------------------------------------|---------------------------------------|
@@ -15,7 +15,7 @@ Table 1: Terrestrial biomes following Olson et al. (2001). University of Marylan
 | 11       | Tundra                                                   | CS, OS, G, PW                         |
 | 12       | Mediterranean Forests, Woodlands & Scrub                 | ENF, EBF, DNF, DBF, MF, CD, OS, WS, S |
 | 13       | Deserts & Xeric Shrublands                               | CS, OS, B                             |
-| 14       | Mangroves²                                               | PW                                    |
+| 14       | Mangroves²                                               |                                       |
 
 ¹Not used to prevent excessive heterogeneity of the data. ²Not analysed.
 
@@ -42,4 +42,4 @@ Table 2: Detailled explanations of the landcover classes following the Universit
 ## References
 Olson, David M., Eric Dinerstein, Eric D. Wikramanayake, Neil D. Burgess, George V. N. Powell, Emma C. Underwood, Jennifer A. D’amico, et al. 2001. Terrestrial Ecoregions of the World: A New Map of Life on Earth: A New Global Map of Terrestrial Ecoregions Provides an Innovative Tool for Conserving Biodiversity. *BioScience* 51 (11): 933–38. [10.1641/0006-3568(2001)051[0933:TEOTWA]2.0.CO;2](https://doi.org/10.1641/0006-3568(2001)051[0933:TEOTWA]2.0.CO;2).
 
-Sulla-Menashe, Damien, and Mark A Friedl. 2022. ‘User Guide to Collection 6 MODIS Land Cover (MCD12Q1 and MCD12C1) Product’, April. [https://lpdaac.usgs.gov/documents/1409/MCD12_User_Guide_V61.pdf](https://lpdaac.usgs.gov/documents/1409/MCD12_User_Guide_V61.pdf).
+Sulla-Menashe, Damien, and Mark A Friedl. 2022. User guide to collection 6 MODIS land cover (MCD12Q1 and MCD12C1) product. [https://lpdaac.usgs.gov/documents/1409/MCD12_User_Guide_V61.pdf](https://lpdaac.usgs.gov/documents/1409/MCD12_User_Guide_V61.pdf).
