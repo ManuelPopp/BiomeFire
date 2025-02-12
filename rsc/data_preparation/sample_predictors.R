@@ -125,6 +125,16 @@ f_predictors <- c(
     dir_lud, "static", "GlobalHumanModification", "gHM_resampled_MODIS.tif"
   ),
   file.path(dir_lud, "static", "nightlights", "nightlights_MODIS.tif"),
+  file.path(
+    dir_lud, "static", "terrain",
+    paste0(
+      c(
+        "aspectcosine_1KMmn_GMTEDmd", "slope_1KMmn_GMTEDmd", "tpi_1KMmn_GMTEDmd"
+        ),
+      ".tif"
+      )
+    ),
+  file.path(dir_lud, "static", "canopyheight", "canopyheight_MODIS.tif")
 )
 
 biome_name <- "Olson_biome_7"
