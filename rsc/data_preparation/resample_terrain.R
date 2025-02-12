@@ -11,7 +11,7 @@ template <- terra::rast(
 
 for (f in files) {
   dst <- file.path(
-    "/lud11/poppman/data/bff/dat/lud11/statis/terrain",
+    "/lud11/poppman/data/bff/dat/lud11/static/terrain",
     paste0(tools::file_path_sans_ext(basename(f)), "_MODIS.tif")
   )
   terra::rast(f) %>%
