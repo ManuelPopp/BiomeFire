@@ -1,13 +1,15 @@
 # BiomeFire
 
 ## Biomes
-Table 1: Terrestrial biomes following Olson et al. (2001). University of Maryland (UMD) classes were used as classified by the MODIS Collection 6.1 (C61) Land Cover Type Product and are here abbreviated as follows: ENF = Evergreen Needleleaf Forests, EBF = Evergreen Broadleaf Forests, DNF = Deciduous Needleleaf Forests, DBF = Deciduous Broadleaf Forests, MF = Mixed Forests, CS = Closed Shrublands, OS = Open Shrublands, WS = Woody Savannas, S = Savannas, G = Grasslands, PW = Permanent Wetlands, B = Barren. Other classes were not used.
+The biome concept was applied following the delineations of Olson et al (2001). More detailled information can be found in [OlsonBiomes.md](https://github.com/ManuelPopp/BiomeFire/blob/main/inf/OlsonBiomes.md).
+
+Table 1: Terrestrial biomes following Olson et al. (2001). University of Maryland (UMD) classes were used as classified by the MODIS Collection 6.1 (C61) Land Cover Type Product and are here abbreviated as follows: ENF = Evergreen Needleleaf Forests, EBF = Evergreen Broadleaf Forests, DNF = Deciduous Needleleaf Forests, DBF = Deciduous Broadleaf Forests, MF = Mixed Forests, CS = Closed Shrublands, OS = Open Shrublands, WS = Woody Savannas, S = Savannas, G = Grasslands, B = Barren. Other classes were not used.
 
 | Biome ID | Biome Name                                               | UMD Classes                           |
 |----------|----------------------------------------------------------|---------------------------------------|
 | 1        | Tropical & Subtropical Moist Broadleaf Forests           | EBF, DBF, MF                          |
 | 2        | Tropical & Subtropical Dry Broadleaf Forests             | EBF, DBF, MF                          |
-| 3        | Tropical & Subtropical Coniferous Forests                | ENF, DNF                              |
+| 3        | Tropical & Subtropical Coniferous Forests                | ENF                                   |
 | 4        | Temperate Broadleaf & Mixed Forests                      | DBF, MF                               |
 | 5        | Temperate Coniferous Forests                             | ENF, DNF¹                             |
 | 6        | Boreal Forests/Taiga                                     | ENF, DNF¹                             |
@@ -18,7 +20,7 @@ Table 1: Terrestrial biomes following Olson et al. (2001). University of Marylan
 | 11       | Tundra                                                   | CS, OS, G, PW                         |
 | 12       | Mediterranean Forests, Woodlands & Scrub                 | ENF, EBF, DNF, DBF, MF, CD, OS, WS, S |
 | 13       | Deserts & Xeric Shrublands                               | CS, OS, B                             |
-| 14       | Mangroves²                                               | PW                                    |
+| 14       | Mangroves²                                               |                                       |
 
 ¹Not used to prevent excessive heterogeneity of the data. ²Not analysed.
 
