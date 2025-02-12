@@ -229,11 +229,13 @@ modelled_response <- function(model_list, data, variable) {
 
 #>----------------------------------------------------------------------------<|
 #> Settings
+## General settings
 recalculate <- FALSE
 set.seed(42)
+n_samples <- 1e3
+biome_id <- 6
 
-biome <- "Olson_biome_6"
-
+## Set directories
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
   sub_clim <- "chelsa_kg"
@@ -243,6 +245,7 @@ if (Sys.info()["sysname"] == "Windows") {
 }
 
 dir_out <- file.path(dir_main, "out")
+dir_fig <- file.path(dir_main, "fig")
 dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
@@ -252,8 +255,18 @@ f_biome_map <- file.path(
   dir_lud, "biomes", "olson_ecoregions", "wwf_terr_ecos.shp"
   )
 
-n_samples <- 1e3
+## Get trailing arguments in case of commandline call
+args <- commandArgs(trailingOnly = TRUE)
+biome_id_arg <- as.numeric(args[1])
 
+interactivemode <- is.na(biome_id_arg)
+if (interactivemode) {
+  biome <- paste0("Olson_biome_", biome_id)
+} else {
+  biome <- paste0("Olson_biome_", biome_id_arg)
+}
+
+## Set colours
 wsl_cols <- c(
   rgb(0, 102, 102, maxColorValue = 255),
   "skyblue3"
@@ -302,14 +315,8 @@ cat("Data set has", nrow(data), "rows.")
 
 head(data)
 
-# Check for autocorrelation amongst predictors
-cormat <- cor(data[, -c(1, 2, ncol(data))], use = "complete.obs")
-corrplot::corrplot(
-  cormat, method = "color", addCoef.col = "black", tl.col = "black",
-  tl.cex = 0.8, number.cex = 0.7, diag = FALSE
-  )
-
-# Check for spatial autocorrelation
+#>-----------------------------------------------------------------------------|
+#> Check for spatial autocorrelation
 data_sf <- sf::st_as_sf(data, coords = c("x", "y"), crs = 4326)
 sample_mindis <- spsurvey::grts(
   sframe = sf::st_transform(data_sf, 3857), n_base = 100, mindis = 50000
@@ -329,67 +336,74 @@ ripleys_K <- spatstat.explore::Kest(
 summary(ripleys_K)
 plot(ripleys_K, main = "Ripley's K")
 
-while (FALSE) {
-  moran.I <- list()
-  geary.c <- list()
-  knn <- 10
-  
-  for (fid in 1:nrow(biome_sf)) {
-    region <- biome_sf[fid, ]
-    subdata_sf <- data_sf %>%
-      sf::st_intersection(region)
-    
-    if (nrow(subdata_sf) / 3 < knn) {
-      next
-    }
-    
-    coords <- sf::st_coordinates(subdata_sf)
-    nb <- spdep::knn2nb(spdep::knearneigh(coords, k = knn))
-    listw <- spdep::nb2listw(nb, style = "W", zero.policy = TRUE)
-    
-    m.i <- spdep::moran.test(
-      subdata_sf$fire, listw, zero.policy = TRUE
+coords <- sf::st_coordinates(data_sf)
+nb <- spdep::knn2nb(spdep::knearneigh(coords, k = 10))
+listw <- spdep::nb2listw(nb, style = "W", zero.policy = TRUE)
+
+m.i <- spdep::moran.test(
+  data_sf$fire, listw, zero.policy = TRUE
+)
+
+g.c <- spdep::geary.test(
+  data_sf$fire, listw, zero.policy = TRUE
+)
+
+#>-----------------------------------------------------------------------------|
+#> Check predictors
+## Check predictive power of predictors
+f_pred <- file.path(dir_out, paste0(biome, "_predictors.csv"))
+sink(f_pred)
+cat("Predictor,adjD2\n")
+sink()
+
+predictors <- names(data)[-c(1, 2, ncol(data) - 3)]
+for (p in predictors) {
+  frml <- as.formula(
+    paste(
+      "fire ~", sprintf("s(%s, k = 5)", p)
     )
-    
-    g.c <- spdep::geary.test(
-      subdata_sf$fire, listw, zero.policy = TRUE
+  )
+  mod <- mgcv::gam(
+    frml,
+    family = stats::binomial(),
+    data = data
+  )
+  
+  cat(
+    paste0(p, ",", ecospat::ecospat.adj.D2.glm(mod), "\n"),
+    file = f_pred, append = TRUE
     )
-    
-    moran.I[[length(moran.I) + 1]] <- m.i
-    geary.c[[length(geary.c) + 1]] <- g.c
-  }
-  
-  mis <- unlist(lapply(X = moran.I, FUN = function(x){return(x$p.value)}))
-  gcs <- unlist(lapply(X = geary.c, FUN = function(x){return(x$p.value)}))
-  
-  if(any(mis < 0.05) | any(gcs < 0.05)) {
-    plot(region)
-    plot(
-      sf::st_geometry(subdata_sf),
-      add = TRUE,
-      col = c("blue", "red")[subdata_sf$fire + 1]
-    )
-  } else {
-    break
-  }
-  
-  if (nrow(data_sf) <= 100) {
-    break
-  } else {
-    cat("\nReducing data size to", nrow(data_sf), "data points.")
-  }
-  
-  data_sf <- data_sf[-sample(1:nrow(data_sf), size = 100), ]
 }
 
-# Select predictors
-predictors <- names(data)[-c(1, 2, ncol(data) - 3)]
+## Check for autocorrelation amongst predictors
+cormat <- cor(data[, -c(1, 2, ncol(data))], use = "complete.obs")
 
+if (interactivemode) {
+  x11()
+  corrplot::corrplot(
+    cormat, method = "color", addCoef.col = "black", tl.col = "black",
+    tl.cex = 0.8, number.cex = 0.7, diag = FALSE
+  )
+} else {
+  pdf(
+    file.path(dir_fig, "predictor_correlations", paste0(biome, ".pdf")),
+    height = 12, width = 12
+    )
+  corrplot::corrplot(
+    cormat, method = "color", addCoef.col = "black", tl.col = "black",
+    tl.cex = 0.8, number.cex = 0.7, diag = FALSE
+  )
+  dev.off()
+}
+
+## Select predictors based on predictive power, autocorrelation, and theory
 predictors <- c("tasmean", "swb", "spimin", "vpdmax", "LightningEquinox", "gHM")
 predictors <- c("spimin", "swb", "vpdmax", "tasmean", "Lightning_clim")
 
 #plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
 
+#>-----------------------------------------------------------------------------|
+#> Fit full model
 formula_mod_full <- as.formula(
   paste(
     "fire ~", 
@@ -451,24 +465,7 @@ sink()
 # 
 # summary(mod_stepwise)# R2 0.357
 
-for (p in predictors) {
-  frml <- as.formula(
-    paste(
-      "fire ~", sprintf("s(%s, k = 5)", p)
-    )
-  )
-  mod <- mgcv::gam(
-    frml,
-    family = stats::binomial(),
-    data = data
-  )
-  plot(
-    mod, pages = 1, se = TRUE,
-    main = paste(p, "r2:", round(summary(mod)$r.sq, 3))
-  )
-  
-  cat(p, "r2:", summary(mod)$r.sq, "\n")
-}
+
 
 #------------------------------------------------------------------------------|
 #> Check potential issues with the model
@@ -618,7 +615,7 @@ for (i in 1:length(predictors)) {
 gridded_plot <- do.call(gridExtra::grid.arrange, plots)
 ggplot2::ggsave(
   filename = file.path(
-    dir_main, "fig", paste0("Modelled_responses", biome, ".pdf")
+    dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
     ),
   plot = gridded_plot,
   height = 12,
@@ -630,35 +627,6 @@ cat(
   "Median CV adj. D2: ", median(d2adj),
   file = file.path(dir_out, paste0(biome, ".txt")), append = TRUE
   )
-
-# Test for temporal structure (how well does a fitted model predict a temporally close vs temporally more distant year)
-years <- unique(data$year)
-out <- data.frame()
-for (year_trn in years[-length(years)]) {
-  for (year_tst in years[which(years != year_trn)]) {
-    mod_trained <- mgcv::gam(
-      formula_mod_full,
-      family = stats::binomial(),
-      data = data[data$year %in% c(year_trn, year_trn + 1),]
-    )
-    
-    tst_df <- data[data$year == year_tst,]
-    tst_df$pred_prob <- stats::predict(
-      mod_trained, type = "response", newdata = tst_df
-      )
-    pred_class <- factor(
-      ifelse(tst_df$pred_prob > 0.5, 1, 0), levels = c(0, 1)
-      )
-    k <- metrics(pred_class, factor(tst_df$fire, levels = c(0, 1)))$kappa
-    out <- rbind(
-      out, data.frame(year_trn = year_trn, year_tst = year_tst, kappa = k)
-      )
-  }
-}
-
-out$diff <- out$year_trn - out$year_tst
-mod <- lm(kappa ~ abs(diff), data = out)
-summary(mod)
 
 #-------------------------------------------------------------------------------
 # Spatial GLMM

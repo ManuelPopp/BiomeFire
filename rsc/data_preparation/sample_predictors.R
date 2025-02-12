@@ -123,7 +123,8 @@ f_predictors <- c(
   file.path(dir_lud, "static", "WWLLN", "Lightning_clim_MODIS.tif"),
   file.path(
     dir_lud, "static", "GlobalHumanModification", "gHM_resampled_MODIS.tif"
-  )
+  ),
+  file.path(dir_lud, "static", "nightlights", "nightlights_MODIS.tif"),
 )
 
 biome_name <- "Olson_biome_7"
