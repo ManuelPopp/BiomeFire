@@ -1,6 +1,8 @@
 # BiomeFire
 
 ## Biomes
+The biome concept was applied following the delineations of Olson et al (2001). More detailled information can be found in [OlsonBiomes.md](https://github.com/ManuelPopp/BiomeFire/blob/main/inf/OlsonBiomes.md).
+
 Table 1: Terrestrial biomes following Olson et al. (2001). University of Maryland (UMD) classes were used as classified by the MODIS Collection 6.1 (C61) Land Cover Type Product and are here abbreviated as follows: ENF = Evergreen Needleleaf Forests, EBF = Evergreen Broadleaf Forests, DNF = Deciduous Needleleaf Forests, DBF = Deciduous Broadleaf Forests, MF = Mixed Forests, CS = Closed Shrublands, OS = Open Shrublands, WS = Woody Savannas, S = Savannas, G = Grasslands, PW = Permanent Wetlands, B = Barren. Other classes were not used.
 
 | Biome ID | Biome Name                                               | UMD Classes                           |

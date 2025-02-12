@@ -8,11 +8,11 @@ var pft = landCover.select('LC_Type2');
 
 // Define the binary classification: Savanna (classes 8 and 9)
 var savannaBinary = pft.expression(
-    '(LC >= 8) && (LC <= 10) ? 1 : 0',
+    '(LC >= 6) && (LC <= 10) ? 1 : 0',
     {
       'LC': pft
     }
-).updateMask(pft.gte(8).and(pft.lte(10)));
+).updateMask(pft.gte(6).and(pft.lte(10)));
 
 // Add the binary classification layer to the map
 Map.centerObject(landCover, 3);
