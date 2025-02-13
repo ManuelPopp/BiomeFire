@@ -129,7 +129,8 @@ f_predictors <- c(
     dir_lud, "static", "terrain",
     paste0(
       c(
-        "aspectcosine_1KMmn_GMTEDmd", "slope_1KMmn_GMTEDmd", "tpi_1KMmn_GMTEDmd"
+        "aspectcosine_1KMmn_GMTEDmd_MODIS", "slope_1KMmn_GMTEDmd_MODIS",
+        "tpi_1KMmn_GMTEDmd_MODIS"
         ),
       ".tif"
       )
