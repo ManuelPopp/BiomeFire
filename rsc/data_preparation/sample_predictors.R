@@ -138,7 +138,12 @@ f_predictors <- c(
   file.path(dir_lud, "static", "canopyheight", "canopyheight_MODIS.tif")
 )
 
-biome_name <- "Olson_biome_7"
+if (length(args) > 1) {
+  biome_name <- paste0("Olson_biome_", args[2])
+} else {
+  biome_name <- "Olson_biome_6"
+}
+
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 # Mask layers
