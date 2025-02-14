@@ -65,6 +65,14 @@ seed <- 42
 year <- as.numeric(args[1])
 set.seed(year %% seed)
 
+if (length(args) > 1) {
+  biome_name <- paste0("Olson_biome_", as.character(args[2]))
+} else {
+  biome_name <- "Olson_biome_4"
+}
+
+cat("\nBiome:", biome_name, "\nYear:", year, "\n")
+
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
   sub_clim <- "chelsa_kg"
@@ -138,12 +146,6 @@ f_predictors <- c(
   file.path(dir_lud, "static", "canopyheight", "canopyheight_MODIS.tif")
 )
 
-if (length(args) > 1) {
-  biome_name <- paste0("Olson_biome_", args[2])
-} else {
-  biome_name <- "Olson_biome_6"
-}
-
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
 # Mask layers
@@ -152,7 +154,7 @@ if(biome_name %in% c("Olson_biome_1", "Olson_biome_2")) {
 } else if(biome_name == "Olson_biome_4") {
   pft_maskfile <- "mixedforest_mask_MODIS.tif"
 } else if (
-  biome_name %in% c("Olson_biome_2", "Olson_biome_5", "Olson_biome_6")
+  biome_name %in% c("Olson_biome_3", "Olson_biome_5", "Olson_biome_6")
   ) {
   pft_maskfile <- "evergr_needleleaf_mask_MODIS.tif"
 } else if (biome_name %in% c("Olson_biome_7", "Olson_biome_8")) {
@@ -282,7 +284,7 @@ save(
   data,
   file = file.path(
     dir_imd, biome_name, paste0("annual_predictors_", year, ".Rsave")
-    )
   )
+)
 
 print("Finished.")
