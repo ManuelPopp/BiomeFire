@@ -67,7 +67,7 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) >= 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[1]))
 } else {
-  biome_name <- "Olson_biome_2"
+  biome_name <- "Olson_biome_8"
 }
 
 cat("\nBiome:", biome_name, "\n")
@@ -157,8 +157,9 @@ for (year in years) {
   burned <- sum(areas[which(classes == 1)])
   nonburned <- sum(areas[which(classes == 0)])
   
+  cat("Burned:", burned, "\nNonburned:", nonburned, "\n")
   cat(
-    paste(biome, year, burned, nonburned, collape = ","),
+    paste0(paste(biome_name, year, burned, nonburned, sep = ","), "\n"),
     file = f_out, append = TRUE
     )
 }
