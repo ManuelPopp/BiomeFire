@@ -356,7 +356,7 @@ sink(f_pred)
 cat("Predictor,adjD2\n")
 sink()
 
-predictors <- names(data)[-c(1, 2, ncol(data) - 3)]
+predictors <- names(data)[-c(1, 2, ncol(data) - c(0:2))]
 for (p in predictors) {
   frml <- as.formula(
     paste(
@@ -375,8 +375,8 @@ for (p in predictors) {
     )
 }
 
-## Check for autocorrelation amongst predictors
-cormat <- cor(data[, -c(1, 2, ncol(data))], use = "complete.obs")
+## Check for autocorrelation among predictors
+cormat <- cor(data[, -c(1, 2, ncol(data) - c(0:2))], use = "complete.obs")
 
 if (interactivemode) {
   x11()
