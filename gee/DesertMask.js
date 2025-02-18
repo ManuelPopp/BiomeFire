@@ -6,13 +6,13 @@ var landCover = ee.ImageCollection('MODIS/006/MCD12Q1')
 // Select the University of Maryland (UMD) layer
 var pft = landCover.select('LC_Type2');
 
-// Define the binary classification: Deserts (classes 7 and 15)
+// Define the binary classification: Deserts (classes 6, 7 and 15)
 var desertBinary = pft.expression(
-    '(LC == 7) || (LC == 15) ? 1 : 0',
+    '(LC == 6) || (LC == 7) || (LC == 15) ? 1 : 0',
     {
       'LC': pft
     }
-).updateMask(pft.eq(7).or(pft.eq(15)));
+).updateMask(pft.eq(6).or(pft.eq(7)).or(pft.eq(15)));
 
 // Add the binary classification layer to the map
 Map.centerObject(landCover, 3);

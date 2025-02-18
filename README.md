@@ -19,7 +19,7 @@ Table 1: Terrestrial biomes following Olson et al. (2001). University of Marylan
 | 10       | Montane Grasslands & Shrublands                          | CS, OS, G                             |
 | 11       | Tundra                                                   | CS, OS, G                             |
 | 12       | Mediterranean Forests, Woodlands & Scrub                 | ENF, EBF, DNF, DBF, MF, CD, OS, WS, S |
-| 13       | Deserts & Xeric Shrublands                               | OS, B                                 |
+| 13       | Deserts & Xeric Shrublands                               | CS, OS, B                             |
 | 14       | Mangroves²                                               |                                       |
 
 ¹Not used to prevent excessive heterogeneity of the data. ²Not analysed.
