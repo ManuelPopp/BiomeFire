@@ -68,7 +68,7 @@ set.seed(year %% seed)
 if (length(args) > 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[2]))
 } else {
-  biome_name <- "Olson_biome_4"
+  biome_name <- "Olson_biome_12"
 }
 
 cat("\nBiome:", biome_name, "\nYear:", year, "\n")
@@ -157,7 +157,9 @@ if(biome_name %in% c("Olson_biome_1", "Olson_biome_2")) {
   biome_name %in% c("Olson_biome_3", "Olson_biome_5", "Olson_biome_6")
   ) {
   pft_maskfile <- "evergr_needleleaf_mask_MODIS.tif"
-} else if (biome_name %in% c("Olson_biome_7", "Olson_biome_8")) {
+} else if (
+  biome_name %in% c("Olson_biome_7", "Olson_biome_8", "Olson_biome_9")
+  ) {
   pft_maskfile <- "savanna_mask_MODIS.tif"
 } else if (biome_name == "Olson_biome_12") {
   pft_maskfile <- "mediterra_mask_MODIS.tif"
