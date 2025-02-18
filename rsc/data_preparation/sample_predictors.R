@@ -167,6 +167,8 @@ if(biome_name %in% c("Olson_biome_1", "Olson_biome_2")) {
   pft_maskfile <- "montane_mask_MODIS.tif"
 } else if (biome_name == "Olson_biome_12") {
   pft_maskfile <- "mediterra_mask_MODIS.tif"
+} else if (biome_name == "Olson_biome_13") {
+  pft_maskfile <- "desert_mask_MODIS.tif"
 }
 
 f_pft <- file.path(
