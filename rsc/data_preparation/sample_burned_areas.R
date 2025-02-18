@@ -98,6 +98,10 @@ if(biome_name %in% c("Olson_biome_1", "Olson_biome_2")) {
   biome_name %in% c("Olson_biome_7", "Olson_biome_8", "Olson_biome_9")
   ) {
   pft_maskfile <- "savanna_mask_MODIS.tif"
+} else if (
+  biome_name %in% c("Olson_biome_10", "Olson_biome_11")
+  ) {
+    pft_maskfile <- "montane_mask_MODIS.tif"
 } else if (biome_name == "Olson_biome_12") {
   pft_maskfile <- "mediterra_mask_MODIS.tif"
 }

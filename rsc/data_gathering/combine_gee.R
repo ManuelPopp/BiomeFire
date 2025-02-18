@@ -30,9 +30,10 @@ if (Sys.info()["sysname"] == "Windows") {
 # "steppe_mask_MODIS.tif"
 # "mediterra_mask_MODIS.tif"
 # "broadmix_mask_MODIS.tif"
+# "montane_mask_MODIS.tif"
 
-name_pattern <- "savanna"
-f_name <- "savanna_mask_MODIS.tif"
+name_pattern <- "montane"
+f_name <- "montane_mask_MODIS.tif"
 dir_gee <- "G:/My Drive/EarthEngineExports"
 files <- list.files(dir_gee, pattern = ".tif", full.names = TRUE)
 
