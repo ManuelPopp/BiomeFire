@@ -59,7 +59,7 @@ get_fires <- function(year, extent) {
 #>----------------------------------------------------------------------------<|
 #> Settings
 year_start <- 2002
-year_end <- 2023
+year_end <- 2024
 years <- seq(year_start, year_end)
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -151,19 +151,12 @@ cat("Biome,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
 
 for (year in years) {
   cat("Year:", year, "\n")
-  fire <- get_fires(year = year, extent = extent) %>%
-    terra::mask(mask = mask_combined)
-  
-  if (year == years[1]) {
-    cat("Extracting pixel areas for raster crop...\n")
-    area_rst <- terra::cellSize(fire, unit = "m")
-    areas <- terra::values(area_rst, mat = FALSE)
-  }
+  areas <- get_fires(year = year, extent = extent) %>%
+    terra::mask(mask = mask_combined) %>%
+    terra::expanse(unit = "m", byValue = TRUE)
 
-  classes <- terra::values(fire, mat = FALSE)
-
-  burned <- sum(areas[which(classes == 1)])
-  nonburned <- sum(areas[which(classes == 0)])
+  nonburned <- areas$area[1]
+  burned <- areas$area[2]
   
   cat("Burned:", burned, "\nNonburned:", nonburned, "\n")
   cat(
