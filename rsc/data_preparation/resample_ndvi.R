@@ -7,7 +7,7 @@ files <- list.files(
   "/lud11/poppman/data/bff/dat/ndvi_raw", pattern = ".tif", full.names = TRUE
   )
 
-years <- unique(as.numeric(stringr::str_extract(basename(file), "\\d{4}")))
+years <- unique(as.numeric(stringr::str_extract(basename(files), "\\d{4}")))
 
 fire <- terra::rast(
   "/lud11/poppman/data/bff/dat/lud11/annual/fire_resampled_MODIS/Fire_2001.tif"
@@ -28,7 +28,7 @@ for (year in years) {
     )
   
   if (!file.exists(dst)) {
-    file_subset <- files[which(year %in% files)]
+    file_subset <- files[which(grepl(year, basename(files)))]
     do.call(terra::merge, lapply(X = file_subset, FUN = terra::rast)) %>%
       terra::resample(fire, method = "near") %>%
       terra::writeRaster(
