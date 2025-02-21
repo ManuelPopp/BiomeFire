@@ -56,6 +56,23 @@ files <- function(directories, year, ...) {
   return(do.call(c, lapply(directories, FUN = dfiles, year = year, ...)))
 }
 
+pred_names <- function(f) {
+  out <- sub(
+    "_MODIS", "",
+    sub(
+      "_sum", "",
+      sub(
+        "MOD17A3HGF.061_Npp_500m", "npp",
+        sub(
+          paste0("_", year), "",
+          sub("_resampled", "", sub(".tif", "", basename(f)))
+        )
+      )
+    )
+  )
+  return(out)
+}
+
 #>----------------------------------------------------------------------------<|
 #> Settings
 args <- commandArgs(trailingOnly = TRUE)
@@ -68,7 +85,7 @@ set.seed(year %% seed)
 if (length(args) > 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[2]))
 } else {
-  biome_name <- "Olson_biome_12"
+  biome_name <- "Olson_biome_5"
 }
 
 cat("\nBiome:", biome_name, "\nYear:", year, "\n")
@@ -115,19 +132,25 @@ d_lightning_equinox <- file.path(dir_ann, "lightning_equinox_resampled_MODIS")
 f_fire <- dfiles(directory = d_fire, year = year, pattern = ".tif")
 
 # Predictors
-f_predictors <- files(
+f_predictors_a <- files(
   directories = c(
-    d_npp, d_pr,
+    d_pr,
     d_spi06, d_spi12, d_spimin,
     d_spei06, d_spei12, d_speimin,
     d_swb, d_tasmean,
-    d_vpdmean, d_vpdmax,
+    d_vpdmean, d_vpdmax
+  ), year = year, pattern = ".tif"
+)
+
+f_predictors_b <- files(
+  directories = c(
+    d_npp, 
     d_lightning, d_lightning_equinox
   ), year = year, pattern = ".tif"
 )
 
-f_predictors <- c(
-  f_predictors,
+f_predictors_b <- c(
+  f_predictors_b,
   file.path(dir_lud, "static", "WWLLN", "Lightning_clim_MODIS.tif"),
   file.path(
     dir_lud, "static", "GlobalHumanModification", "gHM_resampled_MODIS.tif"
@@ -198,32 +221,20 @@ pft_cropped <- terra::crop(pft, extent)
 
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
-print("Loading predictors...")
-predictors <- terra::rast(f_predictors) %>%
+print("Loading predictors part a...")
+predictors_a <- terra::rast(f_predictors_a) %>%
   terra::crop(extent)
 
-print("Renaming predictors...")
-predictor_names <- sub(
-  "_MODIS", "",
-  sub(
-    "_sum", "",
-    sub(
-      "MOD17A3HGF.061_Npp_500m", "npp",
-      sub(
-        paste0("_", year), "",
-        sub("_resampled", "", sub(".tif", "", basename(f_predictors)))
-      )
-    )
-  )
-)
+print("Renaming predictors part a...")
+predictor_names_a <- pred_names(f_predictors_a)
 
-names(predictors) <- predictor_names
+names(predictors_a) <- predictor_names_a
 
 # Create combined mask
 f_pred_mask <- file.path(dir_lud, "masks", "predictor_nan.tif")
 if (!file.exists(f_pred_mask) | recalculate_pred_mask) {
   print("Creating predictor mask...")
-  pred_nan_mask <- predictors %>%
+  pred_nan_mask <- predictors_a %>%
     terra::app(fun = "anyNA") %>%
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
   
@@ -272,10 +283,31 @@ for (class in c(1, 0)) {
 samples <- terra::vect(do.call(c, sample_list))
 
 # Extract data
-data <- c(fire_cropped, predictors) %>%
-  terra::extract(y = samples, xy = TRUE)
+data_a <- c(fire_cropped, predictors_a) %>%
+  terra::extract(y = samples, xy = FALSE)
 
-names(data) <- c("ID", "fire", predictor_names, "x", "y")
+rm(predictors_a)
+gc()
+
+print("Loading predictors part b...")
+predictors_b <- terra::rast(f_predictors_b) %>%
+  terra::crop(extent)
+
+print("Renaming predictors part b...")
+predictor_names_b <- pred_names(f_predictors_b)
+
+names(predictors_b) <- predictor_names_b
+
+data_b <- c(fire_cropped, predictors_b) %>%
+  terra::extract(y = samples, xy = TRUE) %>%
+  dplyr::select(-c(1, 2))
+
+rm(predictors_b)
+gc()
+
+data <- cbind(data_a, data_b)
+
+names(data) <- c("ID", "fire", predictor_names_a, predictor_names_b, "x", "y")
 
 data$year <- year
 
