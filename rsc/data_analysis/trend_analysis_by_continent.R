@@ -33,6 +33,8 @@ biome_names <- c(
   "Mangrove"
 )
 
+colours <- c("")
+
 files <- list.files(
   path = dir_imd, pattern = "annual_ba_per_continent.csv",
   recursive = TRUE, full.names = TRUE
@@ -51,7 +53,8 @@ df <- do.call(rbind, lapply(X = files, FUN = read.csv)) %>%
   dplyr::mutate(
     Normalised = (Burned - min(Burned)) / (max(Burned) - min(Burned))
   ) %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>%
+  dplyr::filter(!Continent %in% c("Antarctica", "Seven seas (open ocean)"))
 
 # pvals <- df %>%
 #   dplyr::group_by(Biome, Biome_name, Continent) %>%
@@ -64,7 +67,10 @@ df <- do.call(rbind, lapply(X = files, FUN = read.csv)) %>%
 
 gg <- ggplot2::ggplot(
   data = df,
-  ggplot2::aes(x = Year, y = Burn_perc, colour = Continent, fill = Continent)
+  ggplot2::aes(
+    x = Year, y = Burn_perc,
+    colour = Continent, fill = Continent, pch = Continent, linetype = Continent
+    )
 ) +
   ggplot2::geom_point() +
   ggplot2::geom_smooth(method = "lm", se = TRUE, alpha = 0.1) +
@@ -76,7 +82,9 @@ gg <- ggplot2::ggplot(
   #     x = text_x, y = text_y,
   #     label = paste0("p = ", signif(p_value, 3))
   #   )
-  # )
+  # ) +
+  #ggplot2::scale_color_manual(values = colours) +
+  #ggplot2::scale_fill_manual(values = colours)
 
 dir_fig_trends <- file.path(dir_fig, "trends")
 if (!dir.exists(dir_fig_trends)) {
