@@ -233,7 +233,7 @@ modelled_response <- function(model_list, data, variable) {
 recalculate <- FALSE
 set.seed(42)
 n_samples <- 1e3
-biome_id <- 6
+biome_id <- 12
 
 ## Set directories
 if (Sys.info()["sysname"] == "Windows") {
@@ -397,7 +397,7 @@ if (interactivemode) {
 }
 
 ## Select predictors based on predictive power, autocorrelation, and theory
-predictors <- c("tasmean", "swb", "spimin", "vpdmax", "LightningEquinox", "gHM")
+predictors <- c("npp_before", "vpdmax", "Lightning_clim", "gHM")
 predictors <- c("spimin", "swb", "vpdmax", "tasmean", "Lightning_clim")
 
 #plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
