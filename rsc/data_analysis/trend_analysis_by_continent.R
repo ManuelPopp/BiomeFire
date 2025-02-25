@@ -68,7 +68,7 @@ df <- do.call(rbind, lapply(X = files, FUN = read.csv)) %>%
 gg <- ggplot2::ggplot(
   data = df,
   ggplot2::aes(
-    x = Year, y = Burn_perc,
+    x = Year, y = Burned,
     colour = Continent, fill = Continent, pch = Continent, linetype = Continent
     )
 ) +

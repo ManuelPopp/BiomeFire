@@ -1,6 +1,6 @@
 // Define the time period for the analysis
 var startYear = 2000;
-var endYear = 2002;
+var endYear = 2024;
 var startDate = startYear + '-01-01';
 var endDate = endYear + '-12-31';
 
@@ -78,18 +78,17 @@ var annualOSAVICollection = ee.ImageCollection(annualOSAVI);
 
 // Define tiles (8 tiles: 2 lat × 4 lon) with adjusted latitude ranges
 var tiles = [
-  {name: "NWW", bounds: [-180, 0, -90, -60]}, // Northern West-West
-  {name: "NW",  bounds: [-90, 0, -60, 0]},    // Northern West
-  {name: "NE",  bounds: [0, 0, 60, 0]},       // Northern East
-  {name: "NEE", bounds: [90, 0, 180, 60]},    // Northern East-East
-  {name: "SWW", bounds: [-180, -60, -90, 0]}, // Southern West-West
-  {name: "SW",  bounds: [-90, -60, 0, 0]},    // Southern West
-  {name: "SE",  bounds: [0, -60, 90, 0]},     // Southern East
-  {name: "SEE", bounds: [90, -60, 180, 0]}    // Southern East-East
+  {name: "NWW", bounds: [-180, 0, -90, 60]}, // Northern West-West
+  {name: "NW",  bounds: [-90, 0, 0, 60]},    // Northern West
+  {name: "NE",  bounds: [0, 0, 90, 60]},     // Northern East
+  {name: "NEE", bounds: [90, 0, 180, 60]},   // Northern East-East
+  {name: "SWW", bounds: [-180, -60, -90, 0]},// Southern West-West
+  {name: "SW",  bounds: [-90, -60, 0, 0]},   // Southern West
+  {name: "SE",  bounds: [0, -60, 90, 0]},    // Southern East
+  {name: "SEE", bounds: [90, -60, 180, 0]}   // Southern East-East
 ];
 
 // Loop through all years and tiles and export each result
-var i = 1;
 ee.List.sequence(startYear, endYear).getInfo().forEach(function(year) {
   // Filter the annual OSAVI for the current year
   var selectedYear = annualOSAVICollection.filter(ee.Filter.eq('year', year)).first();
@@ -101,12 +100,9 @@ ee.List.sequence(startYear, endYear).getInfo().forEach(function(year) {
     // Clip the image to the current tile bounds
     var clippedImage = selectedYear.clip(tileBounds);
     
-    if(i == 1) {
     Map.centerObject(clippedImage, 6);  // Zoom to the area of the first image
     Map.addLayer(clippedImage, {min: 0, max: 0.5, palette: ['blue', 'green', 'yellow', 'red']}, 'First OSAVI Image');
-    
-    i = 2;
-    }
+
     // Export the clipped image for the current tile and year
     Export.image.toDrive({
       image: clippedImage,
