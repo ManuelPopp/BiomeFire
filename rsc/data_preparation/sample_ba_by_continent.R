@@ -60,7 +60,7 @@ get_fires <- function(year, extent) {
 #>----------------------------------------------------------------------------<|
 #> Settings
 year_start <- 2002
-year_end <- 2024
+year_end <- 2023
 years <- seq(year_start, year_end)
 
 args <- commandArgs(trailingOnly = TRUE)
