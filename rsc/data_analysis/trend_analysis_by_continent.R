@@ -68,14 +68,14 @@ df <- do.call(rbind, lapply(X = files, FUN = read.csv)) %>%
 gg <- ggplot2::ggplot(
   data = df,
   ggplot2::aes(
-    x = Year, y = Burned,
+    x = Year, y = Burned / 10000,
     colour = Continent, fill = Continent, pch = Continent, linetype = Continent
     )
 ) +
   ggplot2::geom_point() +
   ggplot2::geom_smooth(method = "lm", se = TRUE, alpha = 0.1) +
   ggplot2::theme_bw() +
-  ggplot2::ylab("Burned area in %")# +
+  ggplot2::ylab("Burned area in ha") +
   # ggplot2::geom_text(
   #   data = pvals,
   #   ggplot2::aes(
@@ -85,6 +85,7 @@ gg <- ggplot2::ggplot(
   # ) +
   #ggplot2::scale_color_manual(values = colours) +
   #ggplot2::scale_fill_manual(values = colours)
+  ggplot2::scale_y_continuous(labels = scales::label_scientific())
 
 dir_fig_trends <- file.path(dir_fig, "trends")
 if (!dir.exists(dir_fig_trends)) {
