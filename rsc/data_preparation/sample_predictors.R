@@ -114,6 +114,8 @@ wsl_cols <- c(
 # Directories
 d_fire <- file.path(dir_ann, "fire_resampled_MODIS")
 d_npp <- file.path(dir_ann, "npp_before_resampled_MODIS")
+d_ndvi <- file.path(dir_ann, "ndvi_MODIS")
+d_osavi <- file.path(dir_ann, "osavi_MODIS")
 d_pr <- file.path(dir_ann, "pr_resampled_MODIS")
 d_spi06 <- file.path(dir_ann, "spi06_resampled_MODIS")
 d_spi12 <- file.path(dir_ann, "spi12_resampled_MODIS")
@@ -144,7 +146,7 @@ f_predictors_a <- files(
 
 f_predictors_b <- files(
   directories = c(
-    d_npp, 
+    d_npp, d_ndvi, d_osavi,
     d_lightning, d_lightning_equinox
   ), year = year, pattern = ".tif"
 )
