@@ -85,7 +85,7 @@ set.seed(year %% seed)
 if (length(args) > 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[2]))
 } else {
-  biome_name <- "Olson_biome_5"
+  biome_name <- "Olson_biome_1"
 }
 
 cat("\nBiome:", biome_name, "\nYear:", year, "\n")
@@ -114,6 +114,8 @@ wsl_cols <- c(
 # Directories
 d_fire <- file.path(dir_ann, "fire_resampled_MODIS")
 d_npp <- file.path(dir_ann, "npp_before_resampled_MODIS")
+d_nppb4 <- file.path(dir_ann, "npp_biome4_MODIS")
+d_nppb4sy <- file.path(dir_ann, "npp_biome4_MODISsy")
 d_ndvi <- file.path(dir_ann, "ndvi_MODIS")
 d_osavi <- file.path(dir_ann, "osavi_MODIS")
 d_pr <- file.path(dir_ann, "pr_resampled_MODIS")
@@ -146,7 +148,7 @@ f_predictors_a <- files(
 
 f_predictors_b <- files(
   directories = c(
-    d_npp, d_ndvi, d_osavi,
+    d_npp, d_nppb4, d_nppb4sy, d_ndvi, d_osavi,
     d_lightning, d_lightning_equinox
   ), year = year, pattern = ".tif"
 )

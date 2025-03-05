@@ -5,7 +5,7 @@ require("stringr")
 
 compute_anew = TRUE
 files <- list.files(
-  "/lud11/poppman/data/bff/dat/osavi_raw", pattern = ".tif", full.names = TRUE
+  "/lud11/poppman/data/bff/dat/npp_biome4", pattern = ".tif", full.names = TRUE
   )
 
 years <- unique(as.numeric(stringr::str_extract(basename(files), "\\d{4}")))
@@ -22,18 +22,17 @@ pb <- progress_bar$new(
 for (year in years) {
   print(paste("\nResampling", year))
   
-  f_name <- paste0("osavi_before_", year + 1, ".tif")
+  f_name <- paste0("npp_biome4_before_", year + 1, ".tif")
   dst <- file.path(
-    "/lud11/poppman/data/bff/dat/lud11/annual/osavi_MODIS",
+    "/lud11/poppman/data/bff/dat/lud11/annual/npp_biome4_MODIS",
     f_name
     )
   
   if (!file.exists(dst) | compute_anew) {
-    file_subset <- files[which(grepl(year, basename(files)))]
-    do.call(terra::merge, lapply(X = file_subset, FUN = terra::rast)) %>%
+    file <- files[which(grepl(year, basename(files)))]
+    terra::rast(file) %>%
       terra::project(fire, method = "near") %>%
       terra::resample(fire, method = "near") %>%
-      terra::clamp(lower = -1, upper = 1) %>%
       terra::writeRaster(
           dst,
           datatype = "FLT4S",
