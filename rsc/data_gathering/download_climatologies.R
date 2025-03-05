@@ -54,7 +54,7 @@ urls_tasmax <- paste0(
 
 urls_tasmean <- paste0(
   "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/",
-  "tasmean/CHELSA_tasmean_",
+  "tas/CHELSA_tas_",
   sprintf("%02d", seq(1, 12)),
   "_1981-2010_V.2.1.tif"
 )
@@ -86,81 +86,93 @@ fire <- terra::rast(
   terra::crop(terra::ext(-180, 180, -90, 90))
 
 # Get annual data (SWB)-------------------------------------------------
-print("Downloading SWB...\n")
-variable = "swb"
-download(url_list = urls_swb, out_dir = file.path(dir_tmp, variable))
-files <- list.files(
-  file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
-)
-terra::rast(files) %>%
-  terra::app(fun = "mean", cores = 12) %>%
-  terra::resample(fire) %>%
-  terra::writeRaster(
-    file.path(dir_stat, paste0(variable, ".tif"))
+variable <- "swb"
+if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
+  print("Downloading SWB...\n")
+  download(url_list = urls_swb, out_dir = file.path(dir_tmp, variable))
+  files <- list.files(
+    file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
   )
+  terra::rast(files) %>%
+    terra::app(fun = "mean", cores = 12) %>%
+    terra::resample(fire) %>%
+    terra::writeRaster(
+      file.path(dir_stat, paste0(variable, ".tif"))
+    )
+}
 
 # Get climatologies-----------------------------------------------------
-print("Downloading Tas mean...\n")
-variable = "tasmean"
-download(url_list = urls_tasmean, out_dir = file.path(dir_tmp, variable))
-files <- list.files(
-  file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
-)
-terra::rast(files) %>%
-  terra::app(fun = "mean", cores = 12) %>%
-  terra::resample(fire) %>%
-  terra::writeRaster(
-    file.path(dir_stat, paste0(variable, ".tif"))
+variable <- "tasmean"
+if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
+  print("Downloading Tas mean...\n")
+  download(url_list = urls_tasmean, out_dir = file.path(dir_tmp, variable))
+  files <- list.files(
+    file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
   )
+  terra::rast(files) %>%
+    terra::app(fun = "mean", cores = 12) %>%
+    terra::resample(fire) %>%
+    terra::writeRaster(
+      file.path(dir_stat, paste0(variable, ".tif"))
+    )
+}
 
-print("Downloading Tas max...\n")
-variable = "tasmax"
-download(url_list = urls_tasmean, out_dir = file.path(dir_tmp, variable))
-files <- list.files(
-  file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
-)
-terra::rast(files) %>%
-  terra::app(fun = "max", cores = 12) %>%
-  terra::resample(fire) %>%
-  terra::writeRaster(
-    file.path(dir_stat, paste0(variable, ".tif"))
+variable <- "tasmax"
+if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
+  print("Downloading Tas max...\n")
+  download(url_list = urls_tasmean, out_dir = file.path(dir_tmp, variable))
+  files <- list.files(
+    file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
   )
+  terra::rast(files) %>%
+    terra::app(fun = "max", cores = 12) %>%
+    terra::resample(fire) %>%
+    terra::writeRaster(
+      file.path(dir_stat, paste0(variable, ".tif"))
+    )
+}
 
-print("Downloading CMI...\n")
-variable = "cmi"
-download(url_list = urls_cmi, out_dir = file.path(dir_tmp, variable))
-files <- list.files(
-  file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
-)
-terra::rast(files) %>%
-  terra::app(fun = "mean", cores = 12) %>%
-  terra::resample(fire) %>%
-  terra::writeRaster(
-    file.path(dir_stat, paste0(variable, ".tif"))
+variable <- "cmi"
+if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
+  print("Downloading CMI...\n")
+  download(url_list = urls_cmi, out_dir = file.path(dir_tmp, variable))
+  files <- list.files(
+    file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
   )
+  terra::rast(files) %>%
+    terra::app(fun = "mean", cores = 12) %>%
+    terra::resample(fire) %>%
+    terra::writeRaster(
+      file.path(dir_stat, paste0(variable, ".tif"))
+    )
+}
 
-print("Downloading P...\n")
-variable = "pr"
-download(url_list = urls_pr, out_dir = file.path(dir_tmp, variable))
-files <- list.files(
-  file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
-)
-terra::rast(files) %>%
-  terra::app(fun = "sum", cores = 12) %>%
-  terra::resample(fire) %>%
-  terra::writeRaster(
-    file.path(dir_stat, paste0(variable, ".tif"))
+variable <- "pr"
+if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
+  print("Downloading P...\n")
+  download(url_list = urls_pr, out_dir = file.path(dir_tmp, variable))
+  files <- list.files(
+    file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
   )
+  terra::rast(files) %>%
+    terra::app(fun = "sum", cores = 12) %>%
+    terra::resample(fire) %>%
+    terra::writeRaster(
+      file.path(dir_stat, paste0(variable, ".tif"))
+    )
+}
 
-print("Downloading VPD...\n")
-variable = "vpd"
-download(url_list = urls_vpd, out_dir = file.path(dir_tmp, variable))
-files <- list.files(
-  file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
-)
-terra::rast(files) %>%
-  terra::app(fun = "mean", cores = 12) %>%
-  terra::resample(fire) %>%
-  terra::writeRaster(
-    file.path(dir_stat, paste0(variable, ".tif"))
+variable <- "vpd"
+if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
+  print("Downloading VPD...\n")
+  download(url_list = urls_vpd, out_dir = file.path(dir_tmp, variable))
+  files <- list.files(
+    file.path(dir_tmp, variable), pattern = ".tif", full.names = TRUE
   )
+  terra::rast(files) %>%
+    terra::app(fun = "mean", cores = 12) %>%
+    terra::resample(fire) %>%
+    terra::writeRaster(
+      file.path(dir_stat, paste0(variable, ".tif"))
+    )
+}
