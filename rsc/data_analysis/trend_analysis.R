@@ -57,7 +57,7 @@ pvals <- df %>%
   dplyr::group_by(Biome, Biome_name) %>%
   dplyr::summarise(
     p_value = trend::mk.test(Burn_perc)$p.val,
-    text_x = max(year) - 3,
+    text_x = max(Year),
     text_y = max(Burn_perc) - 0.1 * (max(Burn_perc) - min(Burn_perc))
     ) %>%
   dplyr::ungroup()
@@ -74,8 +74,8 @@ gg <- ggplot2::ggplot(
   ggplot2::geom_text(
     data = pvals,
     ggplot2::aes(
-      x = text_x, y = text_y,
-      label = paste0("p = ", signif(p_value, 3))
+      x = text_x, y = text_y, hjust = 1,
+      label = paste0("p = ", signif(p_value, 2))
       )
     )
 
@@ -93,9 +93,16 @@ lapply(
 )
 
 gg_long <- gg +
-  ggplot2::facet_wrap(.~ Biome_name, nrow = 4, scales = "free_y")
+  ggplot2::facet_wrap(.~ Biome_name, nrow = 4, scales = "free_y") +
+  ggplot2::theme(legend.position = "none")
 
 lapply(
   X = file.path(dir_fig_trends, paste0("TrendsByBiomeLONG", c(".pdf", ".svg"))),
   FUN = ggplot2::ggsave, plot = gg_long, width = 8, height = 10
+)
+
+file.copy(
+  file.path(dir_fig_trends, "TrendsByBiomeLONG.pdf"),
+  file.path(dir_dbx_suppl, "TrendsByBiomeLONG.pdf"),
+  overwrite = TRUE
 )

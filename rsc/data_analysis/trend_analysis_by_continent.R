@@ -6,6 +6,7 @@ require("ggplot2")
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
   sub_clim <- "chelsa_kg"
+  dir_dbx_suppl <- "C:/Users/poppman/Dropbox/Apps/Overleaf/BiomeFire/suppl_files"
 } else {
   dir_main <- "/lud11/poppman/data/bff"
   sub_clim <- file.path("lud11", "chelsa_kg")
@@ -104,11 +105,18 @@ lapply(
 )
 
 gg_long <- gg +
-  ggplot2::facet_wrap(.~ Biome_name, nrow = 4, scales = "free_y")
+  ggplot2::facet_wrap(.~ Biome_name, nrow = 4, scales = "free_y") +
+  ggplot2::theme(legend.position = "none")
 
 lapply(
   X = file.path(
     dir_fig_trends, paste0("TrendsByBiomeContinentLONG", c(".pdf", ".svg"))
     ),
-  FUN = ggplot2::ggsave, plot = gg_long, width = 8, height = 10
+  FUN = ggplot2::ggsave, plot = gg_long, width = 9, height = 10
+)
+
+file.copy(
+  file.path(dir_fig_trends, "TrendsByBiomeContinentLONG.pdf"),
+  file.path(dir_dbx_suppl, "TrendsByBiomeContinentLONG.pdf"),
+  overwrite = TRUE
 )
