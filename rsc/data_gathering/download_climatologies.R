@@ -97,7 +97,7 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
     terra::app(fun = "mean", cores = 12) %>%
     terra::resample(fire) %>%
     terra::writeRaster(
-      file.path(dir_stat, paste0(variable, ".tif"))
+      file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
 }
 
@@ -113,7 +113,7 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
     terra::app(fun = "mean", cores = 12) %>%
     terra::resample(fire) %>%
     terra::writeRaster(
-      file.path(dir_stat, paste0(variable, ".tif"))
+      file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
 }
 
@@ -128,7 +128,7 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
     terra::app(fun = "max", cores = 12) %>%
     terra::resample(fire) %>%
     terra::writeRaster(
-      file.path(dir_stat, paste0(variable, ".tif"))
+      file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
 }
 
@@ -143,7 +143,7 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
     terra::app(fun = "mean", cores = 12) %>%
     terra::resample(fire) %>%
     terra::writeRaster(
-      file.path(dir_stat, paste0(variable, ".tif"))
+      file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
 }
 
@@ -158,7 +158,7 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
     terra::app(fun = "sum", cores = 12) %>%
     terra::resample(fire) %>%
     terra::writeRaster(
-      file.path(dir_stat, paste0(variable, ".tif"))
+      file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
 }
 
@@ -173,6 +173,6 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
     terra::app(fun = "mean", cores = 12) %>%
     terra::resample(fire) %>%
     terra::writeRaster(
-      file.path(dir_stat, paste0(variable, ".tif"))
+      file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
 }

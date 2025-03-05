@@ -132,6 +132,11 @@ d_vpdmax <- file.path(dir_ann, "vpdmax_resampled_MODIS")
 d_lightning <- file.path(dir_ann, "lightning_resampled_MODIS")
 d_lightning_equinox <- file.path(dir_ann, "lightning_equinox_resampled_MODIS")
 
+chelsa_climate <- list.files(
+  file.path(dir_stc, "chelsa_1981-2010"),
+  pattern = ".tif", full.names = TRUE
+  )
+
 # Response
 f_fire <- dfiles(directory = d_fire, year = year, pattern = ".tif")
 
@@ -170,7 +175,8 @@ f_predictors_b <- c(
       ".tif"
       )
     ),
-  file.path(dir_lud, "static", "canopyheight", "canopyheight_MODIS.tif")
+  file.path(dir_lud, "static", "canopyheight", "canopyheight_MODIS.tif"),
+  chelsa_climate
 )
 
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))

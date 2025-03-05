@@ -1,6 +1,6 @@
 #!/bin/bash
 src_dir="/lud11/poppman/data/bff/dat/lud11/annual/npp_biome4_MODIS"
-dst_dir="/lud11/poppman/data/bff/dat/lud11/annual/npp_biome4_MODISty"
+dst_dir="/lud11/poppman/data/bff/dat/lud11/annual/npp_biome4_MODISsy"
 mkdir -p "$dst_dir"
 
 for file in "$src_dir"/npp_biome4_before_*.tif; do
