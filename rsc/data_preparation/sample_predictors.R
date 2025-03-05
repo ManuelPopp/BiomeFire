@@ -85,7 +85,7 @@ set.seed(year %% seed)
 if (length(args) > 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[2]))
 } else {
-  biome_name <- "Olson_biome_2"
+  biome_name <- "Olson_biome_1"
 }
 
 cat("\nBiome:", biome_name, "\nYear:", year, "\n")
