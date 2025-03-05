@@ -233,7 +233,7 @@ modelled_response <- function(model_list, data, variable) {
 recalculate <- FALSE
 set.seed(42)
 n_samples <- 1e3
-biome_id <- 12
+biome_id <- 1
 
 ## Set directories
 if (Sys.info()["sysname"] == "Windows") {
@@ -314,6 +314,7 @@ rm(chunks)
 cat("Data set has", nrow(data), "rows.")
 
 head(data)
+names(data)
 
 #>-----------------------------------------------------------------------------|
 #> Check for spatial autocorrelation
