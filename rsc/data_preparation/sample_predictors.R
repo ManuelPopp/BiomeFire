@@ -237,6 +237,7 @@ predictors_a <- terra::rast(f_predictors_a) %>%
 
 print("Renaming predictors part a...")
 predictor_names_a <- pred_names(f_predictors_a)
+cat("\n\nPredictors a:", predictor_names_a, "\n\n")
 
 names(predictors_a) <- predictor_names_a
 
@@ -305,6 +306,7 @@ predictors_b <- terra::rast(f_predictors_b) %>%
 
 print("Renaming predictors part b...")
 predictor_names_b <- pred_names(f_predictors_b)
+cat("\n\nPredictors b:", predictor_names_b, "\n\n")
 
 names(predictors_b) <- predictor_names_b
 

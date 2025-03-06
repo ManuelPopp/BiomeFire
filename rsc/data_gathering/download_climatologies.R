@@ -95,7 +95,8 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
   )
   terra::rast(files) %>%
     terra::app(fun = "mean", cores = 12) %>%
-    terra::resample(fire) %>%
+    terra::project(fire, method = "near") %>%
+    terra::resample(fire, method = "near") %>%
     terra::writeRaster(
       file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
@@ -111,7 +112,8 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
   )
   terra::rast(files) %>%
     terra::app(fun = "mean", cores = 12) %>%
-    terra::resample(fire) %>%
+    terra::project(fire, method = "near") %>%
+    terra::resample(fire, method = "near") %>%
     terra::writeRaster(
       file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
@@ -126,7 +128,8 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
   )
   terra::rast(files) %>%
     terra::app(fun = "max", cores = 12) %>%
-    terra::resample(fire) %>%
+    terra::project(fire, method = "near") %>%
+    terra::resample(fire, method = "near") %>%
     terra::writeRaster(
       file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
@@ -141,7 +144,8 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
   )
   terra::rast(files) %>%
     terra::app(fun = "mean", cores = 12) %>%
-    terra::resample(fire) %>%
+    terra::project(fire, method = "near") %>%
+    terra::resample(fire, method = "near") %>%
     terra::writeRaster(
       file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
@@ -156,7 +160,8 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
   )
   terra::rast(files) %>%
     terra::app(fun = "sum", cores = 12) %>%
-    terra::resample(fire) %>%
+    terra::project(fire, method = "near") %>%
+    terra::resample(fire, method = "near") %>%
     terra::writeRaster(
       file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
@@ -171,7 +176,8 @@ if (!file.exists(file.path(dir_stat, paste0(variable, ".tif")))) {
   )
   terra::rast(files) %>%
     terra::app(fun = "mean", cores = 12) %>%
-    terra::resample(fire) %>%
+    terra::project(fire, method = "near") %>%
+    terra::resample(fire, method = "near") %>%
     terra::writeRaster(
       file.path(dir_stat, paste0(variable, "_clim.tif"))
     )
