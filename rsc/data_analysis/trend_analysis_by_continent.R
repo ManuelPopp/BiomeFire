@@ -121,10 +121,23 @@ file.copy(
   overwrite = TRUE
 )
 
-pvals <- df %>%
-  dplyr::group_by(Biome, Biome_name, Continent) %>%
+kendall <- df %>%
+  dplyr::group_by(Biome_name, Continent) %>%
   dplyr::summarise(
-    p_value = trend::mk.test(Burned)$p.val,
-    
+    S = ifelse(any(is.na(Burned)), NA, trend::mk.test(Burned)$estimates[1]),
+    #varS = ifelse(any(is.na(Burned)), NA, trend::mk.test(Burned)$estimates[2]),
+    tau = ifelse(any(is.na(Burned)), NA, trend::mk.test(Burned)$estimates[3]),
+    p_value = ifelse(any(is.na(Burned)), NA, trend::mk.test(Burned)$p.val)
   ) %>%
   dplyr::ungroup()
+
+sidx <- which(kendall$p_value < 0.05)
+kendall$p_value <- as.character(signif(kendall$p_value, digits = 2))
+
+kendall[sidx, "p_value"] <- paste0(kendall$p_value[sidx], "\\\\llag{\\*}")
+
+write.table(
+  kendall, file = file.path(dir_dbx_suppl, "kendall_continent.tex"),
+  sep = " & ", eol = "\\\\\n", col.names = FALSE, row.names = FALSE,
+  quote = FALSE, na = "{-}"
+  )
