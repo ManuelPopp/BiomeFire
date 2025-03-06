@@ -106,13 +106,13 @@ lapply(
 
 gg_long <- gg +
   ggplot2::facet_wrap(.~ Biome_name, nrow = 4, scales = "free_y") +
-  ggplot2::theme(legend.position = "none")
+  ggplot2::theme(legend.position = "bottom")
 
 lapply(
   X = file.path(
     dir_fig_trends, paste0("TrendsByBiomeContinentLONG", c(".pdf", ".svg"))
     ),
-  FUN = ggplot2::ggsave, plot = gg_long, width = 9, height = 10
+  FUN = ggplot2::ggsave, plot = gg_long, width = 9, height = 11
 )
 
 file.copy(
@@ -120,3 +120,11 @@ file.copy(
   file.path(dir_dbx_suppl, "TrendsByBiomeContinentLONG.pdf"),
   overwrite = TRUE
 )
+
+pvals <- df %>%
+  dplyr::group_by(Biome, Biome_name, Continent) %>%
+  dplyr::summarise(
+    p_value = trend::mk.test(Burned)$p.val,
+    
+  ) %>%
+  dplyr::ungroup()
