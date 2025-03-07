@@ -277,13 +277,13 @@ wsl_cols <- c(
 biome_num <- strsplit(biome, split = "_", fixed = TRUE)
 biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
 
-biome_sf <- sf::st_read(f_biome_map) %>%
-  dplyr::filter(
-    BIOME == biome_num
-  ) %>%
-  sf::st_union() %>%
-  sf::st_cast("POLYGON") %>%
-  sf::st_sf()
+# biome_sf <- sf::st_read(f_biome_map) %>%
+#   dplyr::filter(
+#     BIOME == biome_num
+#   ) %>%
+#   sf::st_union() %>%
+#   sf::st_cast("POLYGON") %>%
+#   sf::st_sf()
 
 #>----------------------------------------------------------------------------<|
 #> Load data
@@ -303,7 +303,9 @@ for (f_chunk in f_data_chunks) {
 }
 
 data <- do.call(rbind, chunks) %>%
-  dplyr::select(-c("Lightning", "LightningEquinox")) %>%
+  dplyr::select(
+    -c("Lightning", "LightningEquinox", "cmi_clim", "tasmax_clim")
+    ) %>%
   dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
   dplyr::group_by(year) %>%
   dplyr::sample_n(250, replace = FALSE) %>%
@@ -314,6 +316,26 @@ rm(chunks)
 cat("Data set has", nrow(data), "rows.")
 
 head(data)
+
+#>-----------------------------------------------------------------------------|
+#> Add deviation from climate variables
+names_original <- names(data)
+climates <- c(
+  "pr_clim", "swb_clim", "tasmean_clim", "vpd_clim"
+  )
+coords <- c("x", "y", "year")
+names_new_0 <- names_original[
+  which(!names_original %in% climates & !names_original %in% coords)
+  ]
+names_new_1 <- sub("_clim", "_diff", climates)
+
+for (i in 1:length(climates)) {
+  var <- sub("vpd", "vpdmax", sub("_clim", "", climates[i]))
+  clim <- climates[i]
+  data[, names_new_1[i]] <- data[, var] - data[, clim] 
+}
+
+data <- data[, c(names_new_0, names_new_1, coords)]
 names(data)
 
 #>-----------------------------------------------------------------------------|
