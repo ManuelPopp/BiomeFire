@@ -14,4 +14,4 @@ for year in $(seq $start_year $end_year); do
 done
 
 # Use xargs to run the commands in parallel (1 at a time)
-printf "%s\n" "${commands[@]}" | xargs -I {} -P 2 bash -c '{} && echo "Finished {}"'
+printf "%s\n" "${commands[@]}" | xargs -I {} -P 2 bash -c '{} && echo "Finished {} &&"'

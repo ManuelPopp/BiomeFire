@@ -1,3 +1,4 @@
 /log/*.err
 /log/*.out
+/log/*.log
 /prv/*.token
