@@ -2,3 +2,4 @@
 /log/*.out
 /log/*.log
 /prv/*.token
+/rsc/data_analysis/*.pdf

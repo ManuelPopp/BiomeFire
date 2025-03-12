@@ -119,6 +119,7 @@ d_nppb4sy <- file.path(dir_ann, "npp_biome4_MODISsy")
 d_ndvi <- file.path(dir_ann, "ndvi_MODIS")
 d_osavi <- file.path(dir_ann, "osavi_MODIS")
 d_pr <- file.path(dir_ann, "pr_resampled_MODIS")
+d_prmin <- file.path(dir_ann, "prmin_resampled_MODIS")
 d_spi06 <- file.path(dir_ann, "spi06_resampled_MODIS")
 d_spi12 <- file.path(dir_ann, "spi12_resampled_MODIS")
 d_spimin <- file.path(dir_ann, "spimin_resampled_MODIS")
@@ -145,7 +146,7 @@ f_fire <- dfiles(directory = d_fire, year = year, pattern = ".tif")
 # Predictors
 f_predictors_a <- files(
   directories = c(
-    d_pr,
+    d_pr, d_prmin,
     d_spi06, d_spi12, d_spimin,
     d_spei06, d_spei12, d_speimin,
     d_swb, d_tasmin, d_tasmean, d_tasmax,

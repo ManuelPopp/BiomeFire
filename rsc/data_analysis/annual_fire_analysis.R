@@ -233,7 +233,7 @@ modelled_response <- function(model_list, data, variable) {
 recalculate <- FALSE
 set.seed(42)
 n_samples <- 1e3
-biome_id <- 1
+biome_id <- 2
 print_to_pdf <- TRUE
 
 ## Set directories
@@ -291,9 +291,9 @@ biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
 #> Load data
 scaling_factors <- list(
   "ndvi_before" = 0.0001,
-  "tasmin" = 0.1,
-  "tasmean" = 0.1,
-  "tasmax" = 0.1
+  #"tasmin" = 0.1,
+  "tasmean" = 0.1#,
+  #"tasmax" = 0.1
 )
 
 f_data_chunks <- list.files(
@@ -469,11 +469,15 @@ high_corr <- data.frame(
   )
 
 ## Select predictors based on predictive power, autocorrelation, and theory
-pred_d2adj <- d2df[which(!d2df$pred %in% high_corr$lower.d2),] %>%
+pred_d2adj <- d2df %>%
+  dplyr::filter(!d2df$pred %in% high_corr$lower.d2) %>%
   dplyr::arrange(dplyr::desc(d2adj))
 
 predictors <- pred_d2adj %>%
-  dplyr::filter(!pred %in% c("x", "y", "year")) %>%
+  dplyr::filter(
+    !endsWith(pred, "_clim") & !pred %in% c("x", "y", "year") |
+      startsWith(pred, "Light")
+    ) %>%
   dplyr::pull(pred)
 
 pdf(file.path(dir_fig, "predictor_d2", paste0(biome, "_pred_d2.pdf")))
@@ -493,13 +497,17 @@ plot(
 lines(x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj)
 
 if (interactivemode) {
-  n_pred <- readline(prompt = "Enter number of predictors to use: ")
+  n_predictors <- as.numeric(
+    readline(prompt = "Enter number of predictors to use: ")
+  )
 } else {
   cat("Enter number of predictors to use: ")
-  n_pred <- readLines(file("stdin"), n = 1)
+  n_predictors <- as.numeric(
+    readLines(file("stdin"), n = 1)
+  )
 }
 
-predictors <- predictors[1:as.numeric(n_pred)]
+predictors <- predictors[1:as.numeric(n_predictors)]
 
 #plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
 
@@ -688,14 +696,23 @@ for (i in 1:length(predictors)) {
   col <- c("orange3", "royalblue3", "violetred3", "firebrick3", "cyan3")[i]
   xlabel <- parse(
     text = sub(
-      "_BEFORE", "[previous~year]",
+      "AS[", "[as~",
+      sub(
+        "_CLIM", "~climate",
         sub(
-        "CANOPYHEIGHT", "Canopy~height",
-        sub(
-          "MIN", "[min]",
-          sub("MEAN", "[mean]", sub("MAX", "[max]", toupper(pred)))
+          "_DIFF", "delta",
+          sub(
+            "_BEFORE", "[previous~year]",
+              sub(
+              "CANOPYHEIGHT", "Canopy~height",
+              sub(
+                "MIN", "[min]",
+                sub("MEAN", "[mean]", sub("MAX", "[max]", toupper(pred)))
+              )
+            )
+          )
         )
-      )
+      ), fixed = TRUE
     )
   )
   
@@ -726,7 +743,7 @@ ggplot2::ggsave(
     dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
     ),
   plot = gridded_plot,
-  height = 12,
+  height = 4 * ceiling(n_predictors / 2),
   width = 8
   )
 
