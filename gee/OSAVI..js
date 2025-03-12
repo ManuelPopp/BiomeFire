@@ -1,6 +1,6 @@
 // Define the time period for the analysis
-var startYear = 2000;
-var endYear = 2024;
+var startYear = 2016;
+var endYear = 2018;
 var startDate = startYear + '-01-01';
 var endDate = endYear + '-12-31';
 
@@ -13,8 +13,9 @@ var modis = ee.ImageCollection(
 
 // Define a function to calculate OSAVI
 var calculateOSAVI = function(image) {
-  var red = image.select('sur_refl_b01'); // Red band
-  var nir = image.select('sur_refl_b02'); // NIR band
+  var scaleFactor = 0.0001;
+  var red = image.select('sur_refl_b01').multiply(scaleFactor);; // Red band
+  var nir = image.select('sur_refl_b02').multiply(scaleFactor);; // NIR band
   var L = 0.16; // Optimized soil adjustment factor for OSAVI
   
   // Calculate OSAVI: (NIR - RED) / (NIR + RED + L) * (1 + L)

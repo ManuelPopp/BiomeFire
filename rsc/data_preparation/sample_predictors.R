@@ -126,7 +126,9 @@ d_spei06 <- file.path(dir_ann, "spei06_resampled_MODIS")
 d_spei12 <- file.path(dir_ann, "spei12_resampled_MODIS")
 d_speimin <- file.path(dir_ann, "speimin_resampled_MODIS")
 d_swb <- file.path(dir_ann, "swb_resampled_MODIS")
+d_tasmin <- file.path(dir_ann, "tasmin_resampled_MODIS")
 d_tasmean <- file.path(dir_ann, "tasmean_resampled_MODIS")
+d_tasmax <- file.path(dir_ann, "tasmax_resampled_MODIS")
 d_vpdmean <- file.path(dir_ann, "vpdmean_resampled_MODIS")
 d_vpdmax <- file.path(dir_ann, "vpdmax_resampled_MODIS")
 d_lightning <- file.path(dir_ann, "lightning_resampled_MODIS")
@@ -146,7 +148,7 @@ f_predictors_a <- files(
     d_pr,
     d_spi06, d_spi12, d_spimin,
     d_spei06, d_spei12, d_speimin,
-    d_swb, d_tasmean,
+    d_swb, d_tasmin, d_tasmean, d_tasmax,
     d_vpdmean, d_vpdmax
   ), year = year, pattern = ".tif"
 )

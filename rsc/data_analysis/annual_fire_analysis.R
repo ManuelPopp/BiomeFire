@@ -234,6 +234,7 @@ recalculate <- FALSE
 set.seed(42)
 n_samples <- 1e3
 biome_id <- 1
+print_to_pdf <- TRUE
 
 ## Set directories
 if (Sys.info()["sysname"] == "Windows") {
@@ -380,6 +381,7 @@ cat("Predictor,adjD2\n")
 sink()
 
 predictors <- names(data)[-c(1, 2, ncol(data) - c(0:2))]
+d2df <- data.frame()
 for (p in predictors) {
   frml <- as.formula(
     paste(
@@ -396,12 +398,15 @@ for (p in predictors) {
     paste0(p, ",", ecospat::ecospat.adj.D2.glm(mod), "\n"),
     file = f_pred, append = TRUE
     )
+  d2df <- rbind(
+    d2df, data.frame(pred = p, d2adj = ecospat::ecospat.adj.D2.glm(mod))
+    )
 }
 
 ## Check for autocorrelation among predictors
 cormat <- cor(data[, -c(1, 2, ncol(data) - c(0:2))], use = "complete.obs")
 
-if (interactivemode) {
+if (interactivemode & !print_to_pdf) {
   x11()
   corrplot::corrplot(
     cormat, method = "color", addCoef.col = "black", tl.col = "black",
@@ -413,15 +418,58 @@ if (interactivemode) {
     height = 12, width = 12
     )
   corrplot::corrplot(
-    cormat, method = "color", addCoef.col = "black", tl.col = "black",
-    tl.cex = 0.8, number.cex = 0.7, diag = FALSE
+    cormat, method = "color", addCoef.col = "black", order = "hclust",
+    tl.col = "black", tl.cex = 0.8, number.cex = 0.7, diag = FALSE
   )
   dev.off()
 }
 
+high_corr <- data.frame(
+  x = row.names(cormat)[
+    which(cormat < -0.7 | cormat > 0.7, arr.ind = TRUE)[, 1]
+    ],
+  y = colnames(cormat)[
+    which(cormat < -0.7 | cormat > 0.7, arr.ind = TRUE)[, 2]
+    ],
+  corr = cormat[which(cormat < -0.7 | cormat > 0.7, arr.ind = TRUE)]
+  ) %>%
+  filter(!x == y) %>%
+  dplyr::mutate(
+    x.d2adj = d2df$d2adj[match(x, d2df$pred)],
+    y.d2adj = d2df$d2adj[match(y, d2df$pred)]
+  ) %>%
+  dplyr::mutate(
+    higher.d2 = ifelse(x.d2adj > y.d2adj, x, y),
+    lower.d2 = ifelse(x.d2adj > y.d2adj, y, x)
+  )
+
 ## Select predictors based on predictive power, autocorrelation, and theory
-predictors <- c("npp_before", "vpdmax", "Lightning_clim", "gHM")
-predictors <- c("spimin", "swb", "vpdmax", "tasmean", "Lightning_clim")
+pred_d2adj <- d2df[which(!d2df$pred %in% high_corr$lower.d2),] %>%
+  dplyr::arrange(dplyr::desc(d2adj))
+
+predictors <- pred_d2adj %>%
+  dplyr::pull(pred)
+
+pdf(file.path(dir_fig, "predictor_d2", paste0(biome, "_pred_d2.pdf")))
+par(mgp = c(2, 0.5, 0), mar = c(3, 4, 0.1, 0.1))
+plot(
+  x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj, pch = 16,
+  xlab = "Predictor rank", ylab = expression("d"["adj"]^2)
+  )
+lines(x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj)
+dev.off()
+
+x11()
+plot(
+  x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj, pch = 16,
+  xlab = "Predictor rank", ylab = expression("d"["adj"]^2)
+)
+lines(x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj)
+
+cat("Enter number of predictors to use: ")
+n_pred <- readLines(file("stdin"), n = 1)
+
+predictors <- predictors[1:as.numeric(n_pred)]
 
 #plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
 
@@ -610,7 +658,14 @@ for (i in 1:length(predictors)) {
   col <- c("orange3", "royalblue3", "violetred3", "firebrick3", "cyan3")[i]
   xlabel <- parse(
     text = sub(
-      "MIN", "[min]", sub("MEAN", "[mean]", sub("MAX", "[max]", toupper(pred)))
+      "_BEFORE", "[previous~year]",
+        sub(
+        "CANOPYHEIGHT", "Canopy~height",
+        sub(
+          "MIN", "[min]",
+          sub("MEAN", "[mean]", sub("MAX", "[max]", toupper(pred)))
+        )
+      )
     )
   )
   
