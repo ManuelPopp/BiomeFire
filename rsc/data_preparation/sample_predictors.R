@@ -19,7 +19,7 @@ import <- function(...) {
   #' Import R packages. Install them if necessary.
   #' 
   #' @param ... any argument that can be passed to install.packages.
-  #' @details The function installs only packages that are missing. Packages
+  #' @details The function installs only htoppackages that are missing. Packages
   #' are loaded.
   #' @examples
   #' # Load packages
@@ -85,7 +85,7 @@ set.seed(year %% seed)
 if (length(args) > 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[2]))
 } else {
-  biome_name <- "Olson_biome_1"
+  biome_name <- "Olson_biome_4"
 }
 
 cat("\nBiome:", biome_name, "\nYear:", year, "\n")
@@ -285,6 +285,7 @@ for (class in c(1, 0)) {
   latitudes <- coords[, 2]
   weights <- cos(latitudes * pi / 180)
   weights <- weights / sum(weights)
+  n_samples <- min(n_samples, (length(idx) * 2 / 3))
   ilocs <- sample(idx, size = n_samples, prob = weights)
   xy_df <- as.data.frame(terra::xyFromCell(fire_masked, cell = ilocs))
   sample_list[[as.character(class)]] <- terra::vect(
