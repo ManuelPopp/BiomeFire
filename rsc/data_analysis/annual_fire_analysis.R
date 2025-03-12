@@ -251,6 +251,7 @@ dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
+dir_dbx <- "C:/Users/poppman/Dropbox/Apps/Overleaf/BiomeFire"
 
 f_biome_map <- file.path(
   dir_lud, "biomes", "olson_ecoregions", "wwf_terr_ecos.shp"
@@ -705,6 +706,15 @@ cat(
   "Median CV adj. D2: ", median(d2adj),
   file = file.path(dir_out, paste0(biome, ".txt")), append = TRUE
   )
+
+file.copy(
+  from = file.path(
+    dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
+  ),
+  to = file.path(
+    dir_dbx, paste0("Modelled_responses", biome, ".pdf")
+  )
+)
 
 #-------------------------------------------------------------------------------
 # Spatial GLMM
