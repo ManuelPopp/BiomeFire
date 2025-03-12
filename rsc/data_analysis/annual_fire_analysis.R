@@ -289,6 +289,13 @@ biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
 
 #>----------------------------------------------------------------------------<|
 #> Load data
+scaling_factors <- list(
+  "ndvi_before" = 0.0001,
+  "tasmin" = 0.1,
+  "tasmean" = 0.1,
+  "tasmax" = 0.1
+)
+
 f_data_chunks <- list.files(
   file.path(dir_lud, "intermediate_data", biome), pattern = "annual_predictors",
   full.names = TRUE
@@ -311,7 +318,20 @@ data <- do.call(rbind, chunks) %>%
   dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
   dplyr::group_by(year) %>%
   dplyr::sample_n(250, replace = FALSE) %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    dplyr::across(
+      names(scaling_factors),
+      ~ if(is.numeric(.x)) {
+        .x * scaling_factors[[dplyr::cur_column()]]
+        } else {.x}
+      )
+  ) %>%
+  dplyr::rename(
+    aspect = aspectcosine_1KMmn_GMTEDmd,
+    slope = slope_1KMmn_GMTEDmd,
+    tpi = tpi_1KMmn_GMTEDmd
+  )
 
 rm(chunks)
 
@@ -337,7 +357,6 @@ for (i in 1:length(climates)) {
   data[, names_new_1[i]] <- data[, var] - data[, clim] 
 }
 
-data <- data[, c(names_new_0, names_new_1, coords)]
 names(data)
 
 #>-----------------------------------------------------------------------------|
@@ -389,6 +408,7 @@ for (p in predictors) {
       "fire ~", sprintf("s(%s, k = 5)", p)
     )
   )
+  
   mod <- mgcv::gam(
     frml,
     family = stats::binomial(),
@@ -399,13 +419,17 @@ for (p in predictors) {
     paste0(p, ",", ecospat::ecospat.adj.D2.glm(mod), "\n"),
     file = f_pred, append = TRUE
     )
+  
   d2df <- rbind(
     d2df, data.frame(pred = p, d2adj = ecospat::ecospat.adj.D2.glm(mod))
     )
 }
 
 ## Check for autocorrelation among predictors
-cormat <- cor(data[, -c(1, 2, ncol(data) - c(0:2))], use = "complete.obs")
+cormat <- cor(
+  data[, -c(1, 2, ncol(data) - c(0:2))],
+  use = "complete.obs", method = "pearson"
+  )
 
 if (interactivemode & !print_to_pdf) {
   x11()
@@ -449,6 +473,7 @@ pred_d2adj <- d2df[which(!d2df$pred %in% high_corr$lower.d2),] %>%
   dplyr::arrange(dplyr::desc(d2adj))
 
 predictors <- pred_d2adj %>%
+  dplyr::filter(!pred %in% c("x", "y", "year")) %>%
   dplyr::pull(pred)
 
 pdf(file.path(dir_fig, "predictor_d2", paste0(biome, "_pred_d2.pdf")))
@@ -467,8 +492,12 @@ plot(
 )
 lines(x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj)
 
-cat("Enter number of predictors to use: ")
-n_pred <- readLines(file("stdin"), n = 1)
+if (interactivemode) {
+  n_pred <- readline(prompt = "Enter number of predictors to use: ")
+} else {
+  cat("Enter number of predictors to use: ")
+  n_pred <- readLines(file("stdin"), n = 1)
+}
 
 predictors <- predictors[1:as.numeric(n_pred)]
 

@@ -26,7 +26,7 @@ var computeAndExportTile = function(year, tile) {
   // Sum all monthly NDVI images for the year and convert to float
   var annualSum = ndviCollection
     .sum()
-    .toFloat() // Fix for 'Type<Long>' error
+    .toFloat()
     .rename('annual_ndvi_sum')
     .set('year', year)
     .set('tile', tile.name);
@@ -36,13 +36,13 @@ var computeAndExportTile = function(year, tile) {
 
   // Export the tile to Google Drive
   Export.image.toDrive({
-    image: annualSum,
+    image: annualMean,
     description: 'MODIS_Annual_NDVI_Sum_' + yearStr.getInfo() + '_' + tile.name,
     folder: 'MODIS_Annual_NDVI_Sums',
     fileNamePrefix: 'MODIS_Annual_NDVI_Sum_' + yearStr.getInfo() + '_' + tile.name,
     region: region,
-    scale: 500, // Native MODIS resolution
-    crs: 'EPSG:4326', // Native MODIS projection
+    scale: 500,
+    crs: 'EPSG:4326',
     maxPixels: 1e13
   });
 
@@ -56,4 +56,4 @@ for (var year = startYear; year <= endYear; year++) {
   });
 }
 
-print('All annual NDVI sum tiles are being exported.');
+print('All annual NDVI mean tiles are being exported.');
