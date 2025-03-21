@@ -74,6 +74,27 @@ plot_3d <- function(df, x, y, z, ...) {
       )
 }
 
+## Create GAM formulas
+make_formula <- function(predictors, spatial_term = FALSE) {
+  if (spatial_term) {
+    out <- as.formula(
+      paste(
+        "fire ~", 
+        paste(sprintf("s(%s, k = 5)", predictors), collapse = " + "),
+        " + s(x, y, k = 30)"
+      )
+    )
+  } else {
+    out <- as.formula(
+      paste(
+        "fire ~", 
+        paste(sprintf("s(%s, k = 5)", predictors), collapse = " + ")
+      )
+    )
+  }
+  return(out)
+}
+
 ## Metrics helper function
 metrics <- function(predictions, labels, name = NA) {
   confusion_matrix <- table(labels, predictions)
@@ -233,7 +254,7 @@ modelled_response <- function(model_list, data, variable) {
 recalculate <- FALSE
 set.seed(42)
 n_samples <- 1e3
-biome_id <- 2
+biome_id <- 1
 print_to_pdf <- TRUE
 
 ## Set directories
@@ -268,6 +289,8 @@ if (interactivemode) {
   biome <- paste0("Olson_biome_", biome_id_arg)
 }
 
+f_data <- file.path(dir_dat, "samples", paste0(biome, ".csv"))
+
 ## Set colours
 wsl_cols <- c(
   rgb(0, 102, 102, maxColorValue = 255),
@@ -301,39 +324,48 @@ f_data_chunks <- list.files(
   full.names = TRUE
 )
 
-chunks <- list()
-i <- 1
-for (f_chunk in f_data_chunks) {
-  load(f_chunk)
-  chunks[[i]] <- data
-  rm(data)
-  gc()
-  i <- i + 1
-}
+mts <- sapply(f_data_chunks, function(file) file.info(file)$mtime)
+mt <- ifelse(length(mts) == 0, 0, max(mts))
 
-data <- do.call(rbind, chunks) %>%
-  dplyr::select(
-    -c("Lightning", "LightningEquinox", "cmi_clim", "tasmax_clim")
+if (!file.exists(f_data) | file.info(f_data)$mtime < mt) {
+  chunks <- list()
+  i <- 1
+  for (f_chunk in f_data_chunks) {
+    load(f_chunk)
+    chunks[[i]] <- data
+    rm(data)
+    gc()
+    i <- i + 1
+  }
+  
+  data <- do.call(rbind, chunks) %>%
+    dplyr::select(
+      -c("Lightning", "LightningEquinox", "cmi_clim", "tasmax_clim")
+      ) %>%
+    dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
+    dplyr::group_by(year) %>%
+    dplyr::sample_n(250, replace = FALSE) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      dplyr::across(
+        names(scaling_factors),
+        ~ if(is.numeric(.x)) {
+          .x * scaling_factors[[dplyr::cur_column()]]
+          } else {.x}
+        )
     ) %>%
-  dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
-  dplyr::group_by(year) %>%
-  dplyr::sample_n(250, replace = FALSE) %>%
-  dplyr::ungroup() %>%
-  dplyr::mutate(
-    dplyr::across(
-      names(scaling_factors),
-      ~ if(is.numeric(.x)) {
-        .x * scaling_factors[[dplyr::cur_column()]]
-        } else {.x}
-      )
-  ) %>%
-  dplyr::rename(
-    aspect = aspectcosine_1KMmn_GMTEDmd,
-    slope = slope_1KMmn_GMTEDmd,
-    tpi = tpi_1KMmn_GMTEDmd
-  )
-
-rm(chunks)
+    dplyr::rename(
+      aspect = aspectcosine_1KMmn_GMTEDmd,
+      slope = slope_1KMmn_GMTEDmd,
+      tpi = tpi_1KMmn_GMTEDmd
+    )
+  
+  write.csv(data, file = f_data, row.names = FALSE)
+  
+  rm(chunks)
+} else {
+  data <- read.csv(f_data)
+}
 
 cat("Data set has", nrow(data), "rows.")
 
@@ -342,13 +374,16 @@ head(data)
 #>-----------------------------------------------------------------------------|
 #> Add deviation from climate variables
 names_original <- names(data)
+
 climates <- c(
   "pr_clim", "swb_clim", "tasmean_clim", "vpd_clim"
   )
-coords <- c("x", "y", "year")
+
+coord_names <- c("x", "y", "year")
 names_new_0 <- names_original[
-  which(!names_original %in% climates & !names_original %in% coords)
+  which(!names_original %in% climates & !names_original %in% coord_names)
   ]
+
 names_new_1 <- sub("_clim", "_diff", climates)
 
 for (i in 1:length(climates)) {
@@ -357,11 +392,18 @@ for (i in 1:length(climates)) {
   data[, names_new_1[i]] <- data[, var] - data[, clim] 
 }
 
+data <- data %>%
+  dplyr::select(
+    dplyr::all_of(c(names_new_0, names_new_1, climates, coord_names))
+    )
+
 names(data)
 
 #>-----------------------------------------------------------------------------|
 #> Check for spatial autocorrelation
 data_sf <- sf::st_as_sf(data, coords = c("x", "y"), crs = 4326)
+sf::st_write(data_sf, file.path(dir_out, "samples", paste0(biome, ".gpkg")))
+
 sample_mindis <- spsurvey::grts(
   sframe = sf::st_transform(data_sf, 3857), n_base = 100, mindis = 50000
   )$sites_base$ID
@@ -489,6 +531,8 @@ plot(
 lines(x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj)
 dev.off()
 
+stop()
+
 x11()
 plot(
   x = 1:nrow(pred_d2adj), y = pred_d2adj$d2adj, pch = 16,
@@ -509,17 +553,11 @@ if (interactivemode) {
 
 predictors <- predictors[1:as.numeric(n_predictors)]
 
-#plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")# <- something seems off with npp_before
+#plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")
 
 #>-----------------------------------------------------------------------------|
 #> Fit full model
-formula_mod_full <- as.formula(
-  paste(
-    "fire ~", 
-    paste(sprintf("s(%s, k = 5)", predictors), collapse = " + ")#, " + s(x, y, k = 30)"
-  )
-)
-
+formula_mod_full <- make_formula(predictors)
 formula_mod_null <- fire ~ 1
 
 # try:
@@ -551,30 +589,6 @@ cat(dashline, "\nFull model summary:\n")
 print(mod_summary)
 cat("\nAdj. explained deviance:", expl_deviance, "\n")
 sink()
-
-# scope_list <- lapply(
-#   predictors,
-#   FUN = function(x){
-#     form <- as.formula(
-#       paste(
-#         "~ 1", x, sprintf("s(%s, k = 3)", x), sprintf("s(%s, k = 5)", x),
-#         sep = " + "
-#         )
-#       )
-#     return(form)
-#     }
-#   )
-# 
-# names(scope_list) <- predictors
-# 
-# mod_stepwise <- gam::step.Gam(# Note: The data.frame must not be named "df" for some reason!
-#   mod_null, scope = scope_list,
-#   direction = "both", parallel = TRUE
-# )
-# 
-# summary(mod_stepwise)# R2 0.357
-
-
 
 #------------------------------------------------------------------------------|
 #> Check potential issues with the model
@@ -693,7 +707,7 @@ hist(
 plots <- list()
 for (i in 1:length(predictors)) {
   pred <- predictors[i]
-  col <- c("orange3", "royalblue3", "violetred3", "firebrick3", "cyan3")[i]
+  col <- palette.colors(palette = "Okabe-Ito")[i]
   xlabel <- parse(
     text = sub(
       "AS[", "[as~",
@@ -743,8 +757,8 @@ ggplot2::ggsave(
     dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
     ),
   plot = gridded_plot,
-  height = 4 * ceiling(n_predictors / 2),
-  width = 8
+  height = 4 * max(gridded_plot$layout$t),
+  width = 4 * max(gridded_plot$layout$l)
   )
 
 cat(
@@ -759,7 +773,8 @@ file.copy(
   ),
   to = file.path(
     dir_dbx, paste0("Modelled_responses", biome, ".pdf")
-  )
+  ),
+  overwrite = TRUE
 )
 
 #-------------------------------------------------------------------------------
