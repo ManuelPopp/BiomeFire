@@ -58,6 +58,15 @@ import(
 #>----------------------------------------------------------------------------<|
 #> Functions
 ## 3D plot
+continentality_index <- function(tmin, tmax, lat, method = "conrad") {
+  A <- tmax - tmin
+  phi <- (lat + 10) / 180 * pi
+  if (tolower(method) == "conrad") {
+    K <- 1.7 * A / sin(phi) - 14
+  }
+  return(K)
+}
+
 plot_3d <- function(df, x, y, z, ...) {
   plotly::plot_ly(
     df, x = df[[x]], y = df[[y]], z = df[[z]],
@@ -354,6 +363,13 @@ if (!file.exists(f_data) | file.info(f_data)$mtime < mt) {
           } else {.x}
         )
     ) %>%
+    dplyr::mutate(
+      continentality_conrad = continentality_index(
+        tmin = tasmin / 10 - 273.15,
+        tmax = tasmax / 10 - 273.15,
+        lat = y
+        )
+    ) %>%
     dplyr::rename(
       aspect = aspectcosine_1KMmn_GMTEDmd,
       slope = slope_1KMmn_GMTEDmd,
@@ -402,7 +418,10 @@ names(data)
 #>-----------------------------------------------------------------------------|
 #> Check for spatial autocorrelation
 data_sf <- sf::st_as_sf(data, coords = c("x", "y"), crs = 4326)
-sf::st_write(data_sf, file.path(dir_out, "samples", paste0(biome, ".gpkg")))
+sf::st_write(
+  data_sf, file.path(dir_out, "samples", paste0(biome, ".gpkg")),
+  append = FALSE
+  )
 
 sample_mindis <- spsurvey::grts(
   sframe = sf::st_transform(data_sf, 3857), n_base = 100, mindis = 50000
