@@ -58,15 +58,6 @@ import(
 #>----------------------------------------------------------------------------<|
 #> Functions
 ## 3D plot
-continentality_index <- function(tmin, tmax, lat, method = "conrad") {
-  A <- tmax - tmin
-  phi <- (lat + 10) / 180 * pi
-  if (tolower(method) == "conrad") {
-    K <- 1.7 * A / sin(phi) - 14
-  }
-  return(K)
-}
-
 plot_3d <- function(df, x, y, z, ...) {
   plotly::plot_ly(
     df, x = df[[x]], y = df[[y]], z = df[[z]],
@@ -283,6 +274,8 @@ dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
 dir_dbx <- "C:/Users/poppman/Dropbox/Apps/Overleaf/BiomeFire"
 
+dir_npp_raw <- "L:/poppman/data/bff/dat/biome4"
+
 f_biome_map <- file.path(
   dir_lud, "biomes", "olson_ecoregions", "wwf_terr_ecos.shp"
   )
@@ -337,82 +330,59 @@ mts <- sapply(f_data_chunks, function(file) file.info(file)$mtime)
 mt <- ifelse(length(mts) == 0, 0, max(mts))
 
 if (!file.exists(f_data) | file.info(f_data)$mtime < mt) {
-  chunks <- list()
-  i <- 1
-  for (f_chunk in f_data_chunks) {
-    load(f_chunk)
-    chunks[[i]] <- data
-    rm(data)
-    gc()
-    i <- i + 1
-  }
-  
-  data <- do.call(rbind, chunks) %>%
-    dplyr::select(
-      -c("Lightning", "LightningEquinox", "cmi_clim", "tasmax_clim")
-      ) %>%
-    dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
-    dplyr::group_by(year) %>%
-    dplyr::sample_n(250, replace = FALSE) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(
-      dplyr::across(
-        names(scaling_factors),
-        ~ if(is.numeric(.x)) {
-          .x * scaling_factors[[dplyr::cur_column()]]
-          } else {.x}
-        )
-    ) %>%
-    dplyr::mutate(
-      continentality_conrad = continentality_index(
-        tmin = tasmin / 10 - 273.15,
-        tmax = tasmax / 10 - 273.15,
-        lat = y
-        )
-    ) %>%
-    dplyr::rename(
-      aspect = aspectcosine_1KMmn_GMTEDmd,
-      slope = slope_1KMmn_GMTEDmd,
-      tpi = tpi_1KMmn_GMTEDmd
+  warning("Prepared data not available. Attempting to prepare data.")
+  log <- system(
+    paste0(
+      'Rscript "',
+      file.path(
+        dir_main, "git", "BiomeFire", "rsc", "data_preparation",
+        "combine_data.R"
+        ),
+      '" "', biome_num, '"'
+      ), intern = TRUE
     )
-  
-  write.csv(data, file = f_data, row.names = FALSE)
-  
-  rm(chunks)
-} else {
-  data <- read.csv(f_data)
+  print(log)
 }
 
-cat("Data set has", nrow(data), "rows.")
+data_full <- read.csv(f_data)
+
+cat("Data set originally has", nrow(data_full), "rows.")
+
+# Find all variables with on average more than 10 % missing values
+sparse_variables <- data_full %>%
+  dplyr::group_by(fire, year) %>%
+  dplyr::summarise(
+    dplyr::across(dplyr::everything(), ~ sum(is.na(.)))
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(-c("fire", "year")) %>%
+  dplyr::summarise(
+    dplyr::across(dplyr::everything(), max)
+  ) %>%
+  dplyr::select(
+    dplyr::where(~ . > 0.1 * nrow(data_full) / length(unique(data_full$year)))
+    ) %>%
+  colnames()
+
+# Draw a balanced sample either by a set number per group, or the max possible
+max_sample <- data_full %>%
+  dplyr::select(-dplyr::all_of(sparse_variables)) %>%
+  dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
+  dplyr::group_by(fire, year) %>%
+  dplyr::summarise(group_size = n(), .groups = "drop") %>%
+  dplyr::summarise(min_size = min(group_size)) %>%
+  dplyr::pull(min_size)
+
+data <- data_full %>%
+  dplyr::select(-dplyr::all_of(sparse_variables)) %>%
+  dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
+  dplyr::group_by(fire, year) %>%
+  dplyr::slice_sample(n = min(250, max_sample)) %>%
+  dplyr::ungroup()
+
+cat("Filtered data set has", nrow(data), "rows.")
 
 head(data)
-
-#>-----------------------------------------------------------------------------|
-#> Add deviation from climate variables
-names_original <- names(data)
-
-climates <- c(
-  "pr_clim", "swb_clim", "tasmean_clim", "vpd_clim"
-  )
-
-coord_names <- c("x", "y", "year")
-names_new_0 <- names_original[
-  which(!names_original %in% climates & !names_original %in% coord_names)
-  ]
-
-names_new_1 <- sub("_clim", "_diff", climates)
-
-for (i in 1:length(climates)) {
-  var <- sub("vpd", "vpdmax", sub("_clim", "", climates[i]))
-  clim <- climates[i]
-  data[, names_new_1[i]] <- data[, var] - data[, clim] 
-}
-
-data <- data %>%
-  dplyr::select(
-    dplyr::all_of(c(names_new_0, names_new_1, climates, coord_names))
-    )
-
 names(data)
 
 #>-----------------------------------------------------------------------------|
@@ -454,37 +424,79 @@ g.c <- spdep::geary.test(
 )
 
 #>-----------------------------------------------------------------------------|
+#> Fit full model
+predictors <- names(data)[-c(1, 2, ncol(data) - c(0:2))]
+
+formula_mod_full <- make_formula(predictors)
+formula_mod_null <- fire ~ 1
+
+# try:
+# method = "REML"
+# method = "GCV.Cp"
+mod_null <- mgcv::gam(
+  formula_mod_null,
+  family = stats::binomial(),
+  data = data
+)
+
+mod_full <- mgcv::gam(
+  formula_mod_full,
+  family = stats::binomial(),
+  data = data#,
+  #method = "GCV.Cp"#,
+  #select = TRUE
+)
+
+stats::anova(mod_full, mod_null)
+mgcv::gam.check(mod_full)
+mod_summary <- summary(mod_full)
+expl_deviance <- ecospat::ecospat.adj.D2.glm(mod_full)
+
+dashline <- paste0("#>", paste(rep("-", 60), collapse = ""), "<|")
+sink(file.path(dir_out, paste0(biome, ".txt")))
+cat("Biome:", biome, "\n")
+cat(dashline, "\nFull model summary:\n")
+print(mod_summary)
+cat("\nAdj. explained deviance:", expl_deviance, "\n")
+sink()
+
+#>-----------------------------------------------------------------------------|
 #> Check predictors
 ## Check predictive power of predictors
 f_pred <- file.path(dir_out, paste0(biome, "_predictors.csv"))
 sink(f_pred)
-cat("Predictor,adjD2\n")
+cat("Predictor,DELTAadjD2\n")
 sink()
 
-predictors <- names(data)[-c(1, 2, ncol(data) - c(0:2))]
-d2df <- data.frame()
-for (p in predictors) {
-  frml <- as.formula(
-    paste(
-      "fire ~", sprintf("s(%s, k = 5)", p)
-    )
-  )
+pb <- progress_bar$new(
+  format = "  Calculating reduced model D2 [:bar] :percent in :elapsed",
+  total = length(predictors), clear = FALSE, width = 80
+)
+
+d2df <- foreach(
+  p = predictors, .combine = rbind, .packages = c("mgcv", "ecospat")
+  ) %dopar% {
+  reduced_formula <- make_formula(predictors[which(predictors != p)])
   
   mod <- mgcv::gam(
-    frml,
+    reduced_formula,
     family = stats::binomial(),
     data = data
   )
+  reduced_D2adj <- ecospat::ecospat.adj.D2.glm(mod)
+  delta_D2adj <- expl_deviance - reduced_D2adj
   
   cat(
-    paste0(p, ",", ecospat::ecospat.adj.D2.glm(mod), "\n"),
+    paste0(p, ",", delta_D2adj, "\n"),
     file = f_pred, append = TRUE
     )
   
-  d2df <- rbind(
-    d2df, data.frame(pred = p, d2adj = ecospat::ecospat.adj.D2.glm(mod))
-    )
+  pb$tick()
+  
+  data.frame(pred = p, delta_D2adj = delta_D2adj)
 }
+
+stopCluster(cl)
 
 ## Check for autocorrelation among predictors
 cormat <- cor(
@@ -532,7 +544,7 @@ high_corr <- data.frame(
 ## Select predictors based on predictive power, autocorrelation, and theory
 pred_d2adj <- d2df %>%
   dplyr::filter(!d2df$pred %in% high_corr$lower.d2) %>%
-  dplyr::arrange(dplyr::desc(d2adj))
+  dplyr::arrange(dplyr::desc(deltaD2adj))
 
 predictors <- pred_d2adj %>%
   dplyr::filter(
@@ -573,41 +585,6 @@ if (interactivemode) {
 predictors <- predictors[1:as.numeric(n_predictors)]
 
 #plot_3d(df = data, x = "swb", y = "vpdmax", z = "npp_before")
-
-#>-----------------------------------------------------------------------------|
-#> Fit full model
-formula_mod_full <- make_formula(predictors)
-formula_mod_null <- fire ~ 1
-
-# try:
-# method = "REML"
-# method = "GCV.Cp"
-mod_null <- mgcv::gam(
-  formula_mod_null,
-  family = stats::binomial(),
-  data = data
-)
-
-mod_full <- mgcv::gam(
-  formula_mod_full,
-  family = stats::binomial(),
-  data = data#,
-  #method = "GCV.Cp"#,
-  #select = TRUE
-)
-
-stats::anova(mod_full, mod_null)
-mgcv::gam.check(mod_full)
-mod_summary <- summary(mod_full)
-expl_deviance <- ecospat::ecospat.adj.D2.glm(mod_full)
-
-dashline <- paste0("#>", paste(rep("-", 60), collapse = ""), "<|")
-sink(file.path(dir_out, paste0(biome, ".txt")))
-cat("Biome:", biome, "\n")
-cat(dashline, "\nFull model summary:\n")
-print(mod_summary)
-cat("\nAdj. explained deviance:", expl_deviance, "\n")
-sink()
 
 #------------------------------------------------------------------------------|
 #> Check potential issues with the model
@@ -727,13 +704,14 @@ plots <- list()
 for (i in 1:length(predictors)) {
   pred <- predictors[i]
   col <- palette.colors(palette = "Okabe-Ito")[i]
+  col <- ifelse(is.na(col), "black", col)
   xlabel <- parse(
     text = sub(
       "AS[", "[as~",
       sub(
         "_CLIM", "~climate",
         sub(
-          "_DIFF", "delta",
+          "_DIFF", "*Delta",
           sub(
             "_BEFORE", "[previous~year]",
               sub(
