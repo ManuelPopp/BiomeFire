@@ -269,6 +269,7 @@ if (Sys.info()["sysname"] == "Windows") {
 dir_out <- file.path(dir_main, "out")
 dir_fig <- file.path(dir_main, "fig")
 dir_dat <- file.path(dir_main, "dat")
+dir_cfg <- file.path(dir_main, "git", "BiomeFire", "cfg")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
@@ -462,6 +463,56 @@ sink()
 
 #>-----------------------------------------------------------------------------|
 #> Check predictors
+predictor_groups <- read.csv(file.path(dir_cfg, "PredictorGroups.csv"))
+
+n_pc <- 2
+df_by_group <- data.frame()
+for (predictor_group in unique(predictor_groups$Group)) {
+  predictor_subset <- predictor_groups %>%
+    dplyr::filter(Group == predictor_group) %>%
+    dplyr::filter(Predictor %in% names(data)) %>%
+    dplyr::pull(Predictor)
+  
+  pca_result <- data %>%
+    dplyr::select(dplyr::all_of(predictor_subset)) %>%
+    stats::prcomp(scale. = TRUE)
+  
+  pc_scores <- as.data.frame(pca_result$x[, 1:n_pc])
+  data_with_pcs <- cbind(data, pc_scores)
+  mod_group <- mgcv::gam(
+    make_formula(paste0("PC", 1:n_pc)),
+    family = stats::binomial(),
+    data = data_with_pcs
+  )
+  adjD2 <- ecospat::ecospat.adj.D2.glm(mod_group)
+  df_by_group <- rbind(
+    df_by_group, data.frame(Group = predictor_group, adjD2 = adjD2)
+    )
+}
+
+## Check main biomes within the data
+biome_table <- read.csv(file.path(dir_cfg, "BiomeTable.csv")) %>%
+  dplyr::rename(
+    main_biome = Biome.ID, Biome = Biome.Name, UMD = UMD.Classes
+    )
+
+ggplot2::ggplot(
+  data = data %>%
+    dplyr::left_join(biome_table, by = "main_biome") %>%
+    dplyr::mutate(Burned = factor(fire)) %>%
+    dplyr::group_by(Burned, Biome) %>%
+    dplyr::summarise(Count = n()),
+  aes(x = Biome, y = Count, fill = Burned)
+  ) +
+  ggplot2::geom_bar(stat = "identity", position = "dodge") +
+  ggplot2::scale_x_discrete(
+    labels = function(x) {stringr::str_wrap(x, width = 20)}
+    ) +
+  ggplot2::xlab("Most frequent biome assigned by Biome4") +
+  ggplot2::scale_fill_manual(values = c("lightblue", "firebrick")) +
+  ggplot2::theme_bw() +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+
 ## Check predictive power of predictors
 f_pred <- file.path(dir_out, paste0(biome, "_predictors.csv"))
 sink(f_pred)
