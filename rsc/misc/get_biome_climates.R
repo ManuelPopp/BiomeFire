@@ -22,11 +22,11 @@ biomes <- terra::vect(file.path(folder_biomes, f_biomes)) %>%
 precip <- terra::rast(file.path(folder_chelsa, f_p)) %>%
   terra::extract(biomes, fun = mean) %>%
   dplyr::select(BIOME, mean) %>%
-  dplyr::rename(precipitation = mean)
+  dplyr::rename(precipitation = mean, na.rm = TRUE)
 
 meantemp <- terra::rast(file.path(folder_chelsa, f_t)) %>%
   terra::extract(biomes, fun = mean) %>%
-  dplyr::select(BIOME, mean) %>%
+  dplyr::select(BIOME, mean, na.rm = TRUE) %>%
   dplyr::rename(temperature = mean)
 
 dplyr::inner_join(precip, meantemp, by = "BIOME") %>%
