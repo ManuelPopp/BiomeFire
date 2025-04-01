@@ -66,7 +66,7 @@ continentality_index <- function(tmin, tmax, lat, method = "conrad") {
 
 ## Calculate NPP trend
 npp_trend <- function(
-    x, y, years, npp_directory, series_length = 10,
+    x, y, years, npp_directory, pft_ids, biome_ids, series_length = 10,
     n_cores = parallel::detectCores() - 2
 ) {
   # Extract NPP for each year and PFT
@@ -100,14 +100,15 @@ npp_trend <- function(
   
   names(vals) <- sub("=", "_", names(vals))
   
-  # Compute dominant biome and shift frequencies
+  # Compute dominant Biome4 biome and shift frequencies
   biome_variables <- vals %>%
     dplyr::group_by(id) %>%
     dplyr::summarise(
       main_biome = names(which.max(table(biome))),
       n_biomes = length(unique(biome)),
       n_biome_shifts = sum(biome != c(as.integer(biome)[-1], last(biome))),
-      share_not_main_biome = mean(biome != main_biome)
+      share_not_main_biome = mean(biome != main_biome),
+      share_not_expected_biome = mean(!biome %in% biome_ids)
     )
   
   # Compute NPP slopes for normalised NPP values within time range
@@ -119,19 +120,19 @@ npp_trend <- function(
     .combine = rbind, .packages = c("dplyr")
   ) %dopar% {
     vals %>%
-      dplyr::filter(
+      dplyr::filter(# Filter for the relevant time period
         id == current_id,
         year >= years[current_id] - series_length,
         year <= years[current_id]
       ) %>%
       dplyr::mutate(
-        dplyr::across(
+        dplyr::across(# Set modeled NPP to zero where the PFT are not expected
           dplyr::starts_with("npp_pft_"),
           ~ if_else(. < 0, 0, .)
         )
       ) %>%
       dplyr::mutate(
-        dplyr::across(
+        dplyr::across(# Normalise modeled NPP
           dplyr::starts_with("npp_pft_"),
           ~ round(
             (. - min(., na.rm = TRUE)) / (
@@ -142,7 +143,7 @@ npp_trend <- function(
         )
       ) %>%
       dplyr::summarise(
-        dplyr::across(
+        dplyr::across(# Add regression slope for normalised NPP time series
           dplyr::ends_with("norm"),
           ~ if (length(unique(.x)) > 1) {
             coef(lm(.x ~ year))[2]
@@ -151,7 +152,7 @@ npp_trend <- function(
           },
           .names = "{.col}_slope"
         ),
-        dplyr::across(
+        dplyr::across(# Add difference between norm. NPP and its temporal mean
           dplyr::ends_with("norm"),
           ~ if (length(unique(.x)) > 1) {
             last(.x) - mean(.x[1:length(.x) - 1])
@@ -159,8 +160,21 @@ npp_trend <- function(
             NA
           },
           .names = "{.col}_diff"
+        ),
+        dplyr::across(# Add the current (latest) modeled NPP for each PFT
+          dplyr::starts_with("npp_pft_"), ~ last(.), .names = "{.col}_biome4"
+          )
+      ) %>%
+      dplyr::mutate(# Add maximum NPP for relevant Biome4 PFTs
+        biome_dominant_pft_npp = do.call(
+          pmax, # We use max for NPP of the dominant PFT (outcompetes others)
+          c(
+            dplyr::across(
+              dplyr::all_of(paste0("npp_pft_", pft_ids, "_biome4"))
+              ), na.rm = TRUE
+            )
+          )
         )
-      )
   }
   
   parallel::stopCluster(cl)
@@ -193,6 +207,7 @@ dir_out <- file.path(dir_main, "out")
 dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
+dir_cfg <- file.path(dir_main, "git", "BiomeFire", "cfg")
 
 dir_npp_raw <- "L:/poppman/data/bff/dat/biome4"
 
@@ -222,10 +237,31 @@ biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
 #> Load data
 scaling_factors <- list(
   "ndvi_before" = 0.0001,
-  #"tasmin" = 0.1,
-  "tasmean" = 0.1#,
-  #"tasmax" = 0.1
+  "tasmin" = 0.1,
+  "tasmean" = 0.1,
+  "tasmax" = 0.1
 )
+
+biome_table <- read.table(
+  file.path(dir_cfg, "BiomeTable.txt"), sep = "\t", header = TRUE
+) %>%
+  dplyr::rename(
+    main_biome = Biome.ID, Biome = Biome.Name, UMD = UMD.Classes
+  )
+
+equivalent_biomes <- biome_table %>%
+  dplyr::filter(main_biome == biome_num) %>%
+  dplyr::pull(Biome4.Equivalent.IDs) %>%
+  base::strsplit(split = ",") %>%
+  .[[1]] %>%
+  as.numeric()
+
+pft_ids <- biome_table %>%
+  dplyr::filter(main_biome == biome_num) %>%
+  dplyr::pull(PFT.IDs) %>%
+  base::strsplit(split = ",") %>%
+  .[[1]] %>%
+  as.numeric()
 
 f_data_chunks <- list.files(
   file.path(dir_lud, "intermediate_data", biome), pattern = "annual_predictors",
@@ -278,7 +314,9 @@ if (!file.exists(f_data) | file.info(f_data)$mtime < mt | recalculate) {
   cat("Data set has", nrow(data), "rows.\n")
   
   pft_npp <- npp_trend(
-    data$x, data$y, data$year, dir_npp_raw, series_length = 10
+    data$x, data$y, data$year, dir_npp_raw,
+    pft_ids = pft_ids, biome_ids = equivalent_biomes,
+    series_length = 10
     )
   
   data <- cbind(data, pft_npp %>% dplyr::select(-any_of(c("id", "year"))))

@@ -490,8 +490,18 @@ for (predictor_group in unique(predictor_groups$Group)) {
     )
 }
 
+ggplot2::ggplot(
+  data = df_by_group,
+  ggplot2::aes(x = Group, y = adjD2, fill = Group)
+  ) +
+  ggplot2::geom_bar(stat = "identity") +
+  ggplot2::theme_bw() +
+  ggplot2::theme(legend.position = "none")
+
 ## Check main biomes within the data
-biome_table <- read.csv(file.path(dir_cfg, "BiomeTable.csv")) %>%
+biome_table <- read.table(
+  file.path(dir_cfg, "BiomeTable.txt"), sep = "\t", header = TRUE
+  ) %>%
   dplyr::rename(
     main_biome = Biome.ID, Biome = Biome.Name, UMD = UMD.Classes
     )

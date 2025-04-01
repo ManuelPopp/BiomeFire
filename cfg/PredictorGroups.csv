@@ -55,6 +55,7 @@ npp_pft_10_norm_diff,biome_shift
 npp_pft_11_norm_diff,biome_shift
 npp_pft_12_norm_diff,biome_shift
 npp_pft_13_norm_diff,biome_shift
+biome_dominant_pft_npp,productivity
 pr_diff,water_availability
 swb_diff,water_availability
 tasmean_diff,temperature
