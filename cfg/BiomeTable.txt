@@ -1,15 +1,15 @@
 Biome ID	Biome Name	UMD Classes	Biome4 Equivalent IDs	Biome4 Equivalent Name	PFT IDs	PFT Names
-1	Tropical & Subtropical Moist Broadleaf Forests	"EBF,DBF,MF"		"Tropical evergreen forest,Tropical semi-deciduous forest,Tropical deciduous forest/woodland"	"1,2"	"Tropical Evergreen,Tropical broadleaf"
-2	Tropical & Subtropical Dry Broadleaf Forests	"EBF,DBF,MF"		"Tropical evergreen forest,Tropical semi-deciduous forest,Tropical deciduous forest/woodland"	"1,2"	"Tropical Evergreen,Tropical broadleaf"
-3	Tropical & Subtropical Coniferous Forests	ENF		"Tropical evergreen forest,Tropical semi-deciduous forest,Tropical deciduous forest/woodland"	"1,2"	"Tropical Evergreen,Tropical broadleaf"
-4	Temperate Broadleaf & Mixed Forests	"DBF,MF"		"Temperate deciduous forest,Temperate conifer forest"	4	Temperate broadleaved Summergreen
-5	Temperate Coniferous Forests	"ENF,DNF"	5		5	Temperate needleleaf Evergreen
-6	Boreal Forests/Taiga	"ENF,DNF"	"8,10"		"6,7"	"cold Evergreen,cold Deciduous"
-7	"Tropical & Subtropical Grasslands,  Savannas & Shrublands"	"CS,OS,WS,S,G"	12		9	Tropical Grass
-8	"Temperate Grasslands,  Savannas & Shrublands"	"CS,OS,WS,S,G"			8	Temperate Grass
-9	Flooded Grasslands & Savannas	"CS,OS,WS,S,G"			9	Tropical Grass
-10	Montane Grasslands & Shrublands	"CS,OS,G"	"8,10"		12	Cold Herbaceous Type
-11	Tundra	"CS,OS,G"			"8,11,12"	"Temperate Grass,Tundra Shrub Type,Cold Herbaceous Type"
-12	"Mediterranean Forests,  Woodlands & Scrub"	"ENF,EBF,DNF,DBF,MF,CD,OS,WS,S"			"3,4,5"	"Temperate Broadleaved Evergreen,Temperate broadleaved Summergreen,Temperate needleleaf Evergreen "
-13	Deserts & Xeric Shrublands	"CS,OS,B"			10	"Desert Woody Plant Type C3, C4"
+1	Tropical & Subtropical Moist Broadleaf Forests	"EBF,DBF,MF"	1	"Tropical evergreen forest,Tropical semi-deciduous forest,Tropical deciduous forest/woodland"	"1,2"	"Tropical Evergreen,Tropical Raingreen"
+2	Tropical & Subtropical Dry Broadleaf Forests	"EBF,DBF,MF"	"1,2,3"	"Tropical evergreen forest,Tropical semi-deciduous forest,Tropical deciduous forest/woodland"	"1,2"	"Tropical Evergreen,Tropical Raingreen"
+3	Tropical & Subtropical Coniferous Forests	ENF	1	"Tropical evergreen forest,Tropical semi-deciduous forest,Tropical deciduous forest/woodland"	"1,2"	"Tropical Evergreen,Tropical Raingreen"
+4	Temperate Broadleaf & Mixed Forests	"DBF,MF"	"4,5"	"Temperate deciduous forest,Temperate conifer forest"	4	Temperate broadleaved Summergreen
+5	Temperate Coniferous Forests	"ENF,DNF"	5	Temperate conifer forest	5	Temperate needleleaf Evergreen
+6	Boreal Forests/Taiga	"ENF,DNF"	"8,10"	"Cool conifer forest,Evergreen taiga/montane forest"	"6,7"	"cold Evergreen,cold Deciduous"
+7	"Tropical & Subtropical Grasslands,  Savannas & Shrublands"	"CS,OS,WS,S,G"	"12,19"	"Tropical savanna,Tropical grassland"	9	Tropical Grass
+8	"Temperate Grasslands,  Savannas & Shrublands"	"CS,OS,WS,S,G"	20	Temperate grassland	8	Temperate Grass
+9	Flooded Grasslands & Savannas	"CS,OS,WS,S,G"	"12,19,20"	"Tropical savanna,Tropical grassland,Temperate grassland"	9	Tropical Grass
+10	Montane Grasslands & Shrublands	"CS,OS,G"	"18,19"	"Boreal parkland,Temperate grassland"	12	Cold Herbaceous Type
+11	Tundra	"CS,OS,G"	"22,23,24,25"	"Steppe tundra,Shrub tundra,Dwarf shrub tundra,Prostrate shrub tundra"	"8,11,12"	"Temperate Grass,Tundra Shrub Type,Cold Herbaceous Type"
+12	"Mediterranean Forests,  Woodlands & Scrub"	"ENF,EBF,DNF,DBF,MF,CD,OS,WS,S"		"?mainly temp CF, a bit warm MF"	"3,4,5"	"Temperate Broadleaved Evergreen,Temperate broadleaved Summergreen,Temperate needleleaf Evergreen "
+13	Deserts & Xeric Shrublands	"CS,OS,B"	"13,14,21"	"Tropical xerophytic shrubland,Temperate xerophytic shrubland,Desert"	10	"Desert Woody Plant Type C3, C4"
 14	Mangroves					

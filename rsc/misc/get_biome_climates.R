@@ -19,6 +19,8 @@ f_biomes <- "wwf_terr_ecos.shp"
 biomes <- terra::vect(file.path(folder_biomes, f_biomes)) %>%
   terra::aggregate(by = "BIOME")
 
+biomes
+
 precip <- terra::rast(file.path(folder_chelsa, f_p)) %>%
   terra::extract(biomes, fun = mean) %>%
   dplyr::select(BIOME, mean) %>%

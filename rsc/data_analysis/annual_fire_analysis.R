@@ -75,20 +75,22 @@ plot_3d <- function(df, x, y, z, ...) {
 }
 
 ## Create GAM formulas
-make_formula <- function(predictors, spatial_term = FALSE) {
+make_formula <- function(predictors, spatial_term = FALSE, df = "optimised") {
+  param <- ifelse(df == "fixed", "df", "k")
+  
   if (spatial_term) {
     out <- as.formula(
       paste(
         "fire ~", 
-        paste(sprintf("s(%s, k = 5)", predictors), collapse = " + "),
-        " + s(x, y, k = 30)"
+        paste(sprintf("s(%s, %s = 5)", predictors, param), collapse = " + "),
+        sprintf(" + s(x, y, %s = 30)", param)
       )
     )
   } else {
     out <- as.formula(
       paste(
         "fire ~", 
-        paste(sprintf("s(%s, k = 5)", predictors), collapse = " + ")
+        paste(sprintf("s(%s, %s = 5)", predictors, param), collapse = " + ")
       )
     )
   }
@@ -305,23 +307,15 @@ wsl_cols <- c(
 biome_num <- strsplit(biome, split = "_", fixed = TRUE)
 biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
 
-# biome_sf <- sf::st_read(f_biome_map) %>%
-#   dplyr::filter(
-#     BIOME == biome_num
-#   ) %>%
-#   sf::st_union() %>%
-#   sf::st_cast("POLYGON") %>%
-#   sf::st_sf()
+biome_table <- read.table(
+  file.path(dir_cfg, "BiomeTable.txt"), sep = "\t", header = TRUE
+) %>%
+  dplyr::rename(
+    main_biome = Biome.ID, Biome = Biome.Name, UMD = UMD.Classes
+  )
 
 #>----------------------------------------------------------------------------<|
 #> Load data
-scaling_factors <- list(
-  "ndvi_before" = 0.0001,
-  #"tasmin" = 0.1,
-  "tasmean" = 0.1#,
-  #"tasmax" = 0.1
-)
-
 f_data_chunks <- list.files(
   file.path(dir_lud, "intermediate_data", biome), pattern = "annual_predictors",
   full.names = TRUE
@@ -394,79 +388,74 @@ sf::st_write(
   append = FALSE
   )
 
-sample_mindis <- spsurvey::grts(
-  sframe = sf::st_transform(data_sf, 3857), n_base = 100, mindis = 50000
-  )$sites_base$ID
+# sample_mindis <- spsurvey::grts(
+#   sframe = sf::st_transform(data_sf, 3857), n_base = 100, mindis = 50000
+#   )$sites_base$ID
+# 
+# plot(st_geometry(data_sf))
+# plot(data_sf[sample_mindis,], col = "red", add = T)
+# 
+# ripleys_K <- spatstat.explore::Kest(
+#   spatstat.geom::as.ppp(
+#     data_sf[sample_mindis,] %>%
+#       dplyr::filter(fire == 1) %>%
+#       sf::st_transform(crs = 3857)
+#     )
+#   )
+# 
+# summary(ripleys_K)
+# plot(ripleys_K, main = "Ripley's K")
+# 
+# coords <- sf::st_coordinates(data_sf)
+# nb <- spdep::knn2nb(spdep::knearneigh(coords, k = 10))
+# listw <- spdep::nb2listw(nb, style = "W", zero.policy = TRUE)
+# 
+# m.i <- spdep::moran.test(
+#   data_sf$fire, listw, zero.policy = TRUE
+# )
+# 
+# g.c <- spdep::geary.test(
+#   data_sf$fire, listw, zero.policy = TRUE
+# )
 
-plot(st_geometry(data_sf))
-plot(data_sf[sample_mindis,], col = "red", add = T)
+# #>-----------------------------------------------------------------------------|
+# #> Fit full model
+# predictors <- names(data)[-c(1, 2, ncol(data) - c(0:2))]
 
-ripleys_K <- spatstat.explore::Kest(
-  spatstat.geom::as.ppp(
-    data_sf[sample_mindis,] %>%
-      dplyr::filter(fire == 1) %>%
-      sf::st_transform(crs = 3857)
-    )
-  )
-
-summary(ripleys_K)
-plot(ripleys_K, main = "Ripley's K")
-
-coords <- sf::st_coordinates(data_sf)
-nb <- spdep::knn2nb(spdep::knearneigh(coords, k = 10))
-listw <- spdep::nb2listw(nb, style = "W", zero.policy = TRUE)
-
-m.i <- spdep::moran.test(
-  data_sf$fire, listw, zero.policy = TRUE
-)
-
-g.c <- spdep::geary.test(
-  data_sf$fire, listw, zero.policy = TRUE
-)
-
-#>-----------------------------------------------------------------------------|
-#> Fit full model
-predictors <- names(data)[-c(1, 2, ncol(data) - c(0:2))]
-
-formula_mod_full <- make_formula(predictors)
-formula_mod_null <- fire ~ 1
-
-# try:
-# method = "REML"
-# method = "GCV.Cp"
-mod_null <- mgcv::gam(
-  formula_mod_null,
-  family = stats::binomial(),
-  data = data
-)
-
-mod_full <- mgcv::gam(
-  formula_mod_full,
-  family = stats::binomial(),
-  data = data#,
-  #method = "GCV.Cp"#,
-  #select = TRUE
-)
-
-stats::anova(mod_full, mod_null)
-mgcv::gam.check(mod_full)
-mod_summary <- summary(mod_full)
-expl_deviance <- ecospat::ecospat.adj.D2.glm(mod_full)
-
-dashline <- paste0("#>", paste(rep("-", 60), collapse = ""), "<|")
-sink(file.path(dir_out, paste0(biome, ".txt")))
-cat("Biome:", biome, "\n")
-cat(dashline, "\nFull model summary:\n")
-print(mod_summary)
-cat("\nAdj. explained deviance:", expl_deviance, "\n")
-sink()
+# formula_mod_full <- make_formula(predictors)
+# formula_mod_null <- fire ~ 1
+# 
+# # try:
+# # method = "REML"
+# # method = "GCV.Cp"
+# mod_null <- mgcv::gam(
+#   formula_mod_null,
+#   family = stats::binomial(),
+#   data = data
+# )
+# 
+# mod_full <- mgcv::gam(
+#   formula_mod_full,
+#   family = stats::binomial(),
+#   data = data#,
+#   #method = "GCV.Cp"#,
+#   #select = TRUE
+# )
+# 
+# stats::anova(mod_full, mod_null)
+# mgcv::gam.check(mod_full)
+# mod_summary <- summary(mod_full)
+# expl_deviance <- ecospat::ecospat.adj.D2.glm(mod_full)
 
 #>-----------------------------------------------------------------------------|
 #> Check predictors
+# Compute PCA for each predictor group
 predictor_groups <- read.csv(file.path(dir_cfg, "PredictorGroups.csv"))
 
 n_pc <- 2
-df_by_group <- data.frame()
+pca_loadings <- list()
+pca_list <- list()
+pc_list <- list()
 for (predictor_group in unique(predictor_groups$Group)) {
   predictor_subset <- predictor_groups %>%
     dplyr::filter(Group == predictor_group) %>%
@@ -475,37 +464,269 @@ for (predictor_group in unique(predictor_groups$Group)) {
   
   pca_result <- data %>%
     dplyr::select(dplyr::all_of(predictor_subset)) %>%
+    dplyr::select(dplyr::where(function(x) {var(x) != 0})) %>%
     stats::prcomp(scale. = TRUE)
   
-  pc_scores <- as.data.frame(pca_result$x[, 1:n_pc])
-  data_with_pcs <- cbind(data, pc_scores)
-  mod_group <- mgcv::gam(
-    make_formula(paste0("PC", 1:n_pc)),
+  loadings <- abs(pca_result$rotation[, 1])
+  pca_loadings[[predictor_group]] <- loadings[
+    order(loadings, decreasing = TRUE)
+    ]
+  pca_list[[predictor_group]] <- pca_result
+  pc_list[[predictor_group]] <- pca_result$x[, 1:n_pc]
+}
+
+pca_df <- do.call(cbind, pc_list) %>%
+  as.data.frame() %>%
+  stats::setNames(
+    paste0(
+      base::rep(paste0("PC", 1:n_pc), times = length(pc_list)), "_",
+      base::rep(names(pc_list), each = n_pc)
+      )
+    )
+
+data_with_pcs <- cbind(data, pca_df)
+
+# Fit full model using PC1 and PC2 of each predictor group
+frml_full <- make_formula(names(pca_df), df = "fixed")
+mod_full <- gam::gam(
+  frml_full,
+  family = stats::binomial(),
+  data = data_with_pcs
+  )
+
+adjD2_full <- ecospat::ecospat.adj.D2.glm(mod_full)
+mod_summary <- summary(mod_full)
+
+dashline <- paste0("#>", paste(rep("-", 60), collapse = ""), "<|")
+sink(file.path(dir_out, paste0(biome, ".txt")))
+cat("Biome:", biome, "\n")
+cat(dashline, "\nFull model summary:\n")
+print(mod_summary)
+cat("\nAdj. explained deviance:", adjD2_full, "\n")
+sink()
+
+# Compute adjusted D2 pure contribution for each group as Delta to full model
+df_by_group <- data.frame()
+for (predictor_group in unique(predictor_groups$Group)) {
+  frml_group <- make_formula(
+    paste0(paste0("PC", 1:n_pc), "_", predictor_group),
+    df = "fixed"
+    )
+  
+  frml_other <- make_formula(
+    names(pca_df)[
+      which(
+        !names(pca_df) %in% paste0(paste0("PC", 1:n_pc), "_", predictor_group)
+        )
+      ],
+    df = "fixed"
+  )
+  
+  mod_group <- gam::gam(
+    frml_group,
     family = stats::binomial(),
     data = data_with_pcs
   )
-  adjD2 <- ecospat::ecospat.adj.D2.glm(mod_group)
+  
+  mod_other <- gam::gam(
+    frml_other,
+    family = stats::binomial(),
+    data = data_with_pcs
+  )
+  
+  adjD2_group <- ecospat::ecospat.adj.D2.glm(mod_group)
+  adjD2_other <- ecospat::ecospat.adj.D2.glm(mod_other)
+  
   df_by_group <- rbind(
-    df_by_group, data.frame(Group = predictor_group, adjD2 = adjD2)
-    )
+    df_by_group,
+    data.frame(
+      Group = predictor_group,
+      Delta_adjD2 = adjD2_full - adjD2_other,
+      adjD2_group = adjD2_group
+      )
+  )
 }
 
+write.csv(
+  dplyr::mutate(df_by_group, Biome = biome),
+  file = file.path(dir_dat, "soleD2", paste0(biome, ".csv")),
+  row.names = FALSE
+)
+
+all_files <- file.path(dir_dat, "soleD2", paste0("Olson_biome_", 1:12, ".csv"))
+if (all(file.exists(all_files))) {
+  deviance_df <- do.call(rbind, lapply(all_files, FUN = read.csv))
+  deviance_df$BiomeID <- unlist(
+    lapply(
+      strsplit(deviance_df$Biome, "_"),
+      FUN = function(x) {return(as.numeric(x[3]))}
+      )
+  )
+  
+  deviance_df$Biome_name <- sub(
+    "  ", "\n", biome_table$Biome[
+      match(deviance_df$BiomeID, biome_table$main_biome)
+      ]
+  )
+  
+  gg_d2 <- ggplot2::ggplot(
+    data = deviance_df,
+    ggplot2::aes(x = Group, y = Delta_adjD2)
+    ) +
+    ggplot2::geom_bar(stat = "identity") +
+    ggplot2::facet_wrap(. ~ Biome_name) +
+    ggplot2::theme_bw()
+}
+
+# Plot sole adjusted D2 for the groups
 ggplot2::ggplot(
   data = df_by_group,
-  ggplot2::aes(x = Group, y = adjD2, fill = Group)
+  ggplot2::aes(x = Group, y = Delta_adjD2, fill = Group)
   ) +
   ggplot2::geom_bar(stat = "identity") +
   ggplot2::theme_bw() +
   ggplot2::theme(legend.position = "none")
 
-## Check main biomes within the data
-biome_table <- read.table(
-  file.path(dir_cfg, "BiomeTable.txt"), sep = "\t", header = TRUE
-  ) %>%
-  dplyr::rename(
-    main_biome = Biome.ID, Biome = Biome.Name, UMD = UMD.Classes
-    )
+#------------------------------------------------------------------------------|
+#> Fit models to subsets of the data
+##..............................................................................
+# For each predictor group, find the variable that best represents it
+best_vars <- lapply(pca_loadings, FUN = function(x) {names(x)[1]})
 
+predictors_final <- as.character(best_vars)
+formula_mod_final <- make_formula(predictors_final)
+
+# Fit to samples from full set of years and get subset prediction
+n_iter <- 100
+n_samples <- 1000
+models <- list()
+
+pb <- progress_bar$new(
+  format = "  Fitting models on subsets [:bar] :percent in :elapsed",
+  total = n_iter, clear = FALSE, width = 80
+)
+
+for (model_idx in 1:n_iter) {
+  subs_sample <- c(
+    sample(which(data$fire == 0), size = n_samples),
+    sample(which(data$fire == 1), size = n_samples)
+  )
+  
+  subsdf <- data[subs_sample,]
+  
+  mod_full_subs <- mgcv::gam(
+    formula_mod_final,
+    family = stats::binomial(),
+    data = subsdf
+  )
+  
+  models[[model_idx]] <- mod_full_subs
+  pb$tick()
+}
+
+d2adj <- unlist(
+  lapply(X = models, FUN = function(x){return(ecospat::ecospat.adj.D2.glm(x))})
+)
+
+hist(
+  d2adj,
+  main = expression("Histogram of model"~D^2*"s"),
+  xlab = expression(D[adj]^2),
+  col = grDevices::rgb(0, 102, 102, 200, maxColorValue = 255)
+)
+
+plots <- list()
+for (i in 1:length(predictors_final)) {
+  pred <- predictors_final[i]
+  col <- palette.colors(palette = "Okabe-Ito")[i]
+  col <- ifelse(is.na(col), "black", col)
+  xlabel <- parse(
+    text = sub(
+      "AS[", "[as~",
+      sub(
+        "_CLIM", "~climate",
+        sub(
+          "_DIFF", "*Delta",
+          sub(
+            "_BEFORE", "[previous~year]",
+            sub(
+              "CANOPYHEIGHT", "Canopy~height",
+              sub(
+                "SMIN", "s[min]",
+                sub("MEAN", "[mean]", sub("MAX", "[max]", toupper(pred)))
+              )
+            )
+          )
+        )
+      ), fixed = TRUE
+    )
+  )
+  
+  resp <- modelled_response(model_list = models, data = data, variable = pred)
+  
+  plots[[pred]] <- ggplot2::ggplot(
+    data = resp, ggplot2::aes(x = predictor_value)
+  ) +
+    ggplot2::geom_ribbon(
+      ggplot2::aes(ymin = p5, ymax = p95),
+      fill = col,
+      alpha = 0.5
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes(y = median),
+      colour = col,
+      linewidth = 1
+    ) +
+    ggplot2::xlab(xlabel) +
+    ggplot2::ylab("Fire probability") +
+    ggplot2::ylim(c(0, 1)) +
+    ggplot2::theme_bw()
+}
+
+# Estimate variance components for variables to sort plots
+mod_final <- mgcv::gam(
+  formula_mod_final,
+  family = stats::binomial(),
+  data = data
+)
+
+variance_components <- mgcv::gam.vcomp(mod_final)
+variance_components <- variance_components[
+  order(variance_components, decreasing = TRUE)
+]
+
+gridded_plot <- do.call(gridExtra::grid.arrange, plots)
+ggplot2::ggsave(
+  filename = file.path(
+    dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
+  ),
+  plot = gridded_plot,
+  height = 4 * max(gridded_plot$layout$t),
+  width = 4 * max(gridded_plot$layout$l)
+)
+
+cat(
+  paste0("\n", dashline, "\n"),
+  "Median CV adj. D2: ", median(d2adj),
+  file = file.path(dir_out, paste0(biome, ".txt")), append = TRUE
+)
+
+file.copy(
+  from = file.path(
+    dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
+  ),
+  to = file.path(
+    dir_dbx, paste0("Modelled_responses", biome, ".pdf")
+  ),
+  overwrite = TRUE
+)
+
+
+
+
+stop()
+# END---------------------------------------------------------------------------
+## Check main biomes within the data
 ggplot2::ggplot(
   data = data %>%
     dplyr::left_join(biome_table, by = "main_biome") %>%
@@ -717,122 +938,6 @@ cat(
   paste0("\nSpatial block CV (", n_blocks, " longitudinal bins):"),
   spatial_block_test_kappa, "\n",
   file = file.path(dir_out, paste0(biome, ".txt")), append = TRUE
-)
-
-#------------------------------------------------------------------------------|
-#> Fit models to subsets of the data
-##..............................................................................
-## Fit to samples from full set of years and get subset prediction
-n_iter <- 100
-n_samples <- 1000
-models <- list()
-
-pb <- progress_bar$new(
-  format = "  Fitting models on subsets [:bar] :percent in :elapsed",
-  total = n_iter, clear = FALSE, width = 80
-)
-
-for (model_idx in 1:n_iter) {
-  subs_sample <- c(
-    sample(which(data$fire == 0), size = n_samples),
-    sample(which(data$fire == 1), size = n_samples)
-  )
-  
-  subsdf <- data[subs_sample,]
-  
-  mod_full_subs <- mgcv::gam(
-    formula_mod_final,
-    family = stats::binomial(),
-    data = subsdf
-  )
-  
-  models[[model_idx]] <- mod_full_subs
-  pb$tick()
-}
-
-d2adj <- unlist(
-  lapply(X = models, FUN = function(x){return(ecospat::ecospat.adj.D2.glm(x))})
-  )
-
-hist(
-  d2adj,
-  main = expression("Histogram of model"~D^2*"s"),
-  xlab = expression(D[adj]^2),
-  col = grDevices::rgb(0, 102, 102, 200, maxColorValue = 255)
-  )
-
-plots <- list()
-for (i in 1:length(predictors)) {
-  pred <- predictors[i]
-  col <- palette.colors(palette = "Okabe-Ito")[i]
-  col <- ifelse(is.na(col), "black", col)
-  xlabel <- parse(
-    text = sub(
-      "AS[", "[as~",
-      sub(
-        "_CLIM", "~climate",
-        sub(
-          "_DIFF", "*Delta",
-          sub(
-            "_BEFORE", "[previous~year]",
-              sub(
-              "CANOPYHEIGHT", "Canopy~height",
-              sub(
-                "MIN", "[min]",
-                sub("MEAN", "[mean]", sub("MAX", "[max]", toupper(pred)))
-              )
-            )
-          )
-        )
-      ), fixed = TRUE
-    )
-  )
-  
-  resp <- modelled_response(model_list = models, data = data, variable = pred)
-  
-  plots[[pred]] <- ggplot2::ggplot(
-    data = resp, ggplot2::aes(x = predictor_value)
-    ) +
-    ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = p5, ymax = p95),
-      fill = col,
-      alpha = 0.5
-    ) +
-    ggplot2::geom_line(
-      ggplot2::aes(y = median),
-      colour = col,
-      linewidth = 1
-    ) +
-    ggplot2::xlab(xlabel) +
-    ggplot2::ylab("Fire probability") +
-    ggplot2::ylim(c(0, 1)) +
-    ggplot2::theme_bw()
-}
-
-gridded_plot <- do.call(gridExtra::grid.arrange, plots)
-ggplot2::ggsave(
-  filename = file.path(
-    dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
-    ),
-  plot = gridded_plot,
-  height = 4 * max(gridded_plot$layout$t),
-  width = 4 * max(gridded_plot$layout$l)
-  )
-
-cat(
-  paste0("\n", dashline, "\n"),
-  "Median CV adj. D2: ", median(d2adj),
-  file = file.path(dir_out, paste0(biome, ".txt")), append = TRUE
-  )
-
-file.copy(
-  from = file.path(
-    dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
-  ),
-  to = file.path(
-    dir_dbx, paste0("Modelled_responses", biome, ".pdf")
-  ),
-  overwrite = TRUE
 )
 
 #-------------------------------------------------------------------------------

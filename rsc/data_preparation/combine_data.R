@@ -236,7 +236,7 @@ biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
 #>----------------------------------------------------------------------------<|
 #> Load data
 scaling_factors <- list(
-  "ndvi_before" = 0.0001,
+  "ndvi_before" = 0.00001,
   "tasmin" = 0.1,
   "tasmean" = 0.1,
   "tasmax" = 0.1
