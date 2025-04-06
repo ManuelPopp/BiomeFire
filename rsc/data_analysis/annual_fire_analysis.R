@@ -258,6 +258,14 @@ set.seed(42)
 n_samples <- 1e3
 biome_id <- 1
 print_to_pdf <- TRUE
+use_predictor_groups <- c(
+  "abiotic", "ignition_sources", "terrain",
+  "vegetation_structure_and_productivity"
+  )
+predictor_group_names <- c(
+  "Abiotic", "Ignition sources", "Terrain",
+  "Vegetation structure and NPP"
+)
 
 ## Set directories
 if (Sys.info()["sysname"] == "Windows") {
@@ -450,7 +458,8 @@ sf::st_write(
 #>-----------------------------------------------------------------------------|
 #> Check predictors
 # Compute PCA for each predictor group
-predictor_groups <- read.csv(file.path(dir_cfg, "PredictorGroups.csv"))
+predictor_groups <- read.csv(file.path(dir_cfg, "PredictorGroups.csv")) %>%
+  dplyr::filter(Group %in% use_predictor_groups)
 
 n_pc <- 2
 pca_loadings <- list()
@@ -547,6 +556,28 @@ for (predictor_group in unique(predictor_groups$Group)) {
   )
 }
 
+df_by_group <- rbind(
+  df_by_group %>%
+    dplyr::mutate(
+      Group = dplyr::recode(
+        Group, !!!setNames(predictor_group_names, use_predictor_groups)
+        )
+    ),
+  data.frame(
+    Group = c("Shared", "Unexplained"),
+    Delta_adjD2 = c(
+      adjD2_full - sum(df_by_group$Delta_adjD2),
+      1 - adjD2_full
+    ),
+    adjD2_group = c(adjD2_full, 1)
+  )
+) %>%
+  dplyr::mutate(
+    Group = factor(
+      Group, levels = c(predictor_group_names, "Shared", "Unexplained")
+      )
+    )
+
 write.csv(
   dplyr::mutate(df_by_group, Biome = biome),
   file = file.path(dir_dat, "soleD2", paste0(biome, ".csv")),
@@ -555,7 +586,12 @@ write.csv(
 
 all_files <- file.path(dir_dat, "soleD2", paste0("Olson_biome_", 1:12, ".csv"))
 if (all(file.exists(all_files))) {
-  deviance_df <- do.call(rbind, lapply(all_files, FUN = read.csv))
+  deviance_df <- do.call(rbind, lapply(all_files, FUN = read.csv)) %>%
+    dplyr::mutate(
+      Group = factor(
+        Group, levels = c(predictor_group_names, "Shared", "Unexplained")
+      )
+    )
   deviance_df$BiomeID <- unlist(
     lapply(
       strsplit(deviance_df$Biome, "_"),
@@ -570,12 +606,22 @@ if (all(file.exists(all_files))) {
   )
   
   gg_d2 <- ggplot2::ggplot(
-    data = deviance_df,
-    ggplot2::aes(x = Group, y = Delta_adjD2)
+    deviance_df, ggplot2::aes(x = "", y = Delta_adjD2, fill = Group)
+  ) +
+    ggplot2::geom_bar(stat = "identity", width = 1) +
+    ggplot2::coord_polar(theta = "y", start = 0) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.text = ggplot2::element_blank(),
+      axis.title = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
+      panel.grid = ggplot2::element_blank(),
+      plot.margin = margin(0, 0, 0, 0)
     ) +
-    ggplot2::geom_bar(stat = "identity") +
-    ggplot2::facet_wrap(. ~ Biome_name) +
-    ggplot2::theme_bw()
+    ggplot2::scale_fill_manual(
+      values = c("red", "orange", "steelblue", "green", "gray", "white")
+    ) +
+    ggplot2::facet_wrap(. ~ Biome_name)
 }
 
 # Plot sole adjusted D2 for the groups
