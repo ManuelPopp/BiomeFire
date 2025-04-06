@@ -16,20 +16,22 @@ f_p <- "pr_clim.tif"
 f_t <- "tasmean_clim.tif"
 f_biomes <- "wwf_terr_ecos.shp"
 
+print("Aggregating biome shapes...")
 biomes <- terra::vect(file.path(folder_biomes, f_biomes)) %>%
   terra::aggregate(by = "BIOME")
 
-biomes
-
+print("Extracting P values...")
 precip <- terra::rast(file.path(folder_chelsa, f_p)) %>%
   terra::extract(biomes, fun = mean) %>%
   dplyr::select(BIOME, mean) %>%
-  dplyr::rename(precipitation = mean, na.rm = TRUE)
+  dplyr::rename(biome = BIOME, precipitation = mean, na.rm = TRUE)
 
+print("Extracting T values...")
 meantemp <- terra::rast(file.path(folder_chelsa, f_t)) %>%
   terra::extract(biomes, fun = mean) %>%
   dplyr::select(BIOME, mean, na.rm = TRUE) %>%
-  dplyr::rename(temperature = mean)
+  dplyr::rename(biome = BIOME, temperature = mean)
 
-dplyr::inner_join(precip, meantemp, by = "BIOME") %>%
+print("Joining P and T...")
+dplyr::inner_join(precip, meantemp, by = "biome") %>%
   write.csv(file = file.path(dir_lud, "chelsa_variables", "biome_clim.csv"))
