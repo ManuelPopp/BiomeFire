@@ -592,6 +592,7 @@ if (all(file.exists(all_files))) {
         Group, levels = c(predictor_group_names, "Shared", "Unexplained")
       )
     )
+  
   deviance_df$BiomeID <- unlist(
     lapply(
       strsplit(deviance_df$Biome, "_"),
@@ -605,11 +606,56 @@ if (all(file.exists(all_files))) {
       ]
   )
   
+  deviance_df$Biome_name <- factor(
+    deviance_df$Biome_name,
+    levels = unique(
+      deviance_df$Biome_name[order(deviance_df$BiomeID, decreasing = FALSE)]
+      )
+    )
+  
+  summarised_df <- deviance_df %>%
+    dplyr::mutate(
+      Group = factor(
+        ifelse(
+          Group %in% c("Shared", "Unexplained"),
+          paste0(Group, "_sum"),
+          "Factors_sum"
+        ), levels = c("Factors_sum", "Shared_sum", "Unexplained_sum")
+      )
+    ) %>%
+    dplyr::group_by(Group, Biome, BiomeID, Biome_name) %>%
+    dplyr::summarise(
+      Delta_adjD2 = sum(Delta_adjD2)
+    ) %>%
+    dplyr::mutate(ring = 2)
+  
+  deviance_df_plot <- deviance_df %>%
+    dplyr::mutate(ring = 1.5) %>%
+    dplyr::select(-adjD2_group) %>%
+    rbind(summarised_df) %>%
+    dplyr::group_by(Biome, BiomeID, Biome_name, ring) %>%
+    dplyr::mutate(
+      Group = factor(Group),
+      Pos_text = cumsum(Delta_adjD2) - Delta_adjD2 / 2,
+      Label = ifelse(ring == 1, "", round(Delta_adjD2, 2))
+    )
+  
   gg_d2 <- ggplot2::ggplot(
-    deviance_df, ggplot2::aes(x = "", y = Delta_adjD2, fill = Group)
+    deviance_df_plot,
+    ggplot2::aes(
+      x = ring, xmin = 1, y = Delta_adjD2,
+      fill = Group, color = Group
+      )
   ) +
-    ggplot2::geom_bar(stat = "identity", width = 1) +
-    ggplot2::coord_polar(theta = "y", start = 0) +
+    ggplot2::geom_bar(stat = "identity", width = 0.5, size = 0.75) +
+    ggplot2::coord_polar(theta = "y") +
+    ggplot2::geom_text(
+      data = deviance_df_plot,
+      ggplot2::aes(
+        x = ring, y = Pos_text,
+        label = Label, color = Group
+      ), size = 1, show.legend = FALSE
+    ) +
     ggplot2::theme_minimal() +
     ggplot2::theme(
       axis.text = ggplot2::element_blank(),
@@ -619,7 +665,16 @@ if (all(file.exists(all_files))) {
       plot.margin = margin(0, 0, 0, 0)
     ) +
     ggplot2::scale_fill_manual(
-      values = c("red", "orange", "steelblue", "green", "gray", "white")
+      values = c(
+        "red", "orange", "steelblue", "green", "grey", "white",
+        "black", "grey", "white"
+        )
+    ) +
+    ggplot2::scale_colour_manual(
+      values = c(
+        "red", "orange", "steelblue", "green", "grey", "black",
+        "black", "black", grDevices::rgb(0, 0, 0, 0)
+      )
     ) +
     ggplot2::facet_wrap(. ~ Biome_name)
 }

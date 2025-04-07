@@ -21,10 +21,12 @@ biomes <- terra::vect(file.path(folder_biomes, f_biomes)) %>%
   terra::aggregate(by = "BIOME")
 
 print("Extracting P values...")
-precip <- terra::rast(file.path(folder_chelsa, f_p))
+precip <- terra::rast(file.path(folder_chelsa, f_p)) %>%
+  terra::extract(biomes, fun = mean, na.rm = TRUE)
 
 print("Extracting T values...")
-meantemp <- terra::rast(file.path(folder_chelsa, f_t))
+meantemp <- terra::rast(file.path(folder_chelsa, f_t)) %>%
+  terra::extract(biomes, fun = mean, na.rm = TRUE)
 
 print("Joining P and T...")
 data.frame(
