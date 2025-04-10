@@ -34,7 +34,7 @@ biome_names <- c(
   "Mangrove"
 )
 
-colours <- c("")
+colour_pal <- grDevices::palette.colors(palette = "R4")[c(2, 7, 4, 3, 8, 6, 9)]
 
 files <- list.files(
   path = dir_imd, pattern = "annual_ba_per_continent.csv",
@@ -57,14 +57,26 @@ df <- do.call(rbind, lapply(X = files, FUN = read.csv)) %>%
   dplyr::ungroup() %>%
   dplyr::filter(!Continent %in% c("Antarctica", "Seven seas (open ocean)"))
 
-# pvals <- df %>%
-#   dplyr::group_by(Biome, Biome_name, Continent) %>%
-#   dplyr::summarise(
-#     p_value = trend::mk.test(Burn_perc)$p.val,
-#     text_x = max(year) - 3,
-#     text_y = max(Burn_perc) - 0.1 * (max(Burn_perc) - min(Burn_perc))
-#   ) %>%
-#   dplyr::ungroup()
+f_biome_climate <- file.path(dir_dat, "Biome_clim.csv")
+
+if (!file.exists(f_biome_climate)) {
+  read.csv(file.path(dir_lud, "chelsa_variables", "biome_clim.csv")) %>%
+    dplyr::filter(Biome <= 12) %>%
+    dplyr::select(Biome, Precipitation.sum, Temperature.mean) %>%
+    stats::setNames(nm = c("Biome", "Pr", "Tas")) %>%
+    dplyr::mutate(
+      rank_p = rank(Pr * (-1), ties.method = "first"),
+      rank_t = rank(Tas, ties.method = "first")
+    ) %>%
+    write.csv(f_biome_climate, row.names = FALSE)
+}
+
+biome_climate <- read.csv(f_biome_climate)
+plot_order <- biome_climate %>%
+  dplyr::arrange(rank_t, ceiling(rank_p / 4)) %>%
+  dplyr::pull(Biome)
+
+df$Biome_name <- factor(df$Biome_name, levels = biome_names[plot_order])
 
 gg <- ggplot2::ggplot(
   data = df,
@@ -84,8 +96,8 @@ gg <- ggplot2::ggplot(
   #     label = paste0("p = ", signif(p_value, 3))
   #   )
   # ) +
-  #ggplot2::scale_color_manual(values = colours) +
-  #ggplot2::scale_fill_manual(values = colours)
+  ggplot2::scale_color_manual(values = colour_pal) +
+  ggplot2::scale_fill_manual(values = colour_pal) +
   ggplot2::scale_y_continuous(labels = scales::label_scientific())
 
 dir_fig_trends <- file.path(dir_fig, "trends")

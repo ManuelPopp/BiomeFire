@@ -304,11 +304,8 @@ if (interactivemode) {
 
 f_data <- file.path(dir_dat, "samples", paste0(biome, ".csv"))
 
-## Set colours
-wsl_cols <- c(
-  rgb(0, 102, 102, maxColorValue = 255),
-  "skyblue3"
-)
+## Set a vision deficiency-compatible colour palette
+colour_pal <- grDevices::palette.colors(palette = "R4")
 
 #>----------------------------------------------------------------------------<|
 #> Get biome outlines
@@ -321,6 +318,22 @@ biome_table <- read.table(
   dplyr::rename(
     main_biome = Biome.ID, Biome = Biome.Name, UMD = UMD.Classes
   )
+
+f_biome_climate <- file.path(dir_dat, "Biome_clim.csv")
+
+if (!file.exists(f_biome_climate)) {
+  read.csv(file.path(dir_lud, "chelsa_variables", "biome_clim.csv")) %>%
+    dplyr::filter(Biome <= 12) %>%
+    dplyr::select(Biome, Precipitation.sum, Temperature.mean) %>%
+    stats::setNames(nm = c("Biome", "Pr", "Tas")) %>%
+    dplyr::mutate(
+      rank_p = rank(Pr * (-1), ties.method = "first"),
+      rank_t = rank(Tas, ties.method = "first")
+    ) %>%
+    write.csv(f_biome_climate, row.names = FALSE)
+}
+
+biome_climate <- read.csv(f_biome_climate)
 
 #>----------------------------------------------------------------------------<|
 #> Load data
@@ -384,7 +397,7 @@ data <- data_full %>%
   dplyr::ungroup()
 
 cat("Filtered data set has", nrow(data), "rows.")
-
+rm(data_full)
 head(data)
 names(data)
 
@@ -495,6 +508,24 @@ pca_df <- do.call(cbind, pc_list) %>%
 
 data_with_pcs <- cbind(data, pca_df)
 
+# Save PCA loadings
+pcd_loadings_df <- data.frame(
+  variable = do.call(c, lapply(pca_loadings, FUN = names)),
+  pca_loading = as.numeric(do.call(c, pca_loadings)),
+  group = unlist(
+    mapply(
+      FUN = function(x, y) {as.character(rep(x, length(y)))},
+      names(pca_loadings), pca_loadings
+      )
+  )
+)
+
+write.csv(
+  pcd_loadings_df,
+  file = file.path(dir_out, "pca_loadings", paste0(biome, ".csv")),
+  row.names = FALSE
+  )
+
 # Fit full model using PC1 and PC2 of each predictor group
 frml_full <- make_formula(names(pca_df), df = "fixed")
 mod_full <- gam::gam(
@@ -584,8 +615,15 @@ write.csv(
   row.names = FALSE
 )
 
+# Plot explained deviance by biome and factor group
 all_files <- file.path(dir_dat, "soleD2", paste0("Olson_biome_", 1:12, ".csv"))
 if (all(file.exists(all_files))) {
+  # Get plot order
+  plot_order <- biome_climate %>%
+    dplyr::arrange(rank_t, ceiling(rank_p / 4)) %>%
+    dplyr::pull(Biome)
+  
+  # Get deviance partitions from files
   deviance_df <- do.call(rbind, lapply(all_files, FUN = read.csv)) %>%
     dplyr::mutate(
       Group = factor(
@@ -600,7 +638,7 @@ if (all(file.exists(all_files))) {
       )
   )
   
-  deviance_df$Biome_name <- sub(
+  deviance_df$Biome_name <- gsub(
     "  ", "\n", biome_table$Biome[
       match(deviance_df$BiomeID, biome_table$main_biome)
       ]
@@ -613,14 +651,15 @@ if (all(file.exists(all_files))) {
       )
     )
   
+  # Summarise and combine
   summarised_df <- deviance_df %>%
     dplyr::mutate(
       Group = factor(
         ifelse(
           Group %in% c("Shared", "Unexplained"),
-          paste0(Group, "_sum"),
-          "Factors_sum"
-        ), levels = c("Factors_sum", "Shared_sum", "Unexplained_sum")
+          paste0("sum_", Group),
+          "sum_Predictors"
+        ), levels = c("sum_Predictors", "sum_Shared", "sum_Unexplained")
       )
     ) %>%
     dplyr::group_by(Group, Biome, BiomeID, Biome_name) %>%
@@ -630,69 +669,107 @@ if (all(file.exists(all_files))) {
     dplyr::mutate(ring = 2)
   
   deviance_df_plot <- deviance_df %>%
-    dplyr::mutate(ring = 1.5) %>%
+    dplyr::mutate(ring = 2.5) %>%
     dplyr::select(-adjD2_group) %>%
     rbind(summarised_df) %>%
-    dplyr::group_by(Biome, BiomeID, Biome_name, ring) %>%
+    dplyr::mutate(Group = factor(Group)) %>%
     dplyr::mutate(
-      Group = factor(Group),
-      Pos_text = cumsum(Delta_adjD2) - Delta_adjD2 / 2,
-      Label = ifelse(ring == 1, "", round(Delta_adjD2, 2))
+      Label = ifelse(
+        startsWith(as.character(Group), "sum_"), round(Delta_adjD2, 2), ""
+        )
+    ) %>%
+    dplyr::mutate(
+      Biome_name = factor(Biome_name, levels = unique(Biome_name)[plot_order])
+    )
+  
+  manual_labels <- parse(
+    text = gsub(
+      "^sum_", "Sigma~", gsub(" ", "~", levels(deviance_df_plot$Group))
+      )
     )
   
   gg_d2 <- ggplot2::ggplot(
     deviance_df_plot,
     ggplot2::aes(
-      x = ring, xmin = 1, y = Delta_adjD2,
+      x = ring, xmin = ring - 0.5, xmax = ring, y = Delta_adjD2,
       fill = Group, color = Group
       )
   ) +
     ggplot2::geom_bar(stat = "identity", width = 0.5, size = 0.75) +
-    ggplot2::coord_polar(theta = "y") +
-    ggplot2::geom_text(
-      data = deviance_df_plot,
-      ggplot2::aes(
-        x = ring, y = Pos_text,
-        label = Label, color = Group
-      ), size = 1, show.legend = FALSE
-    ) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(
-      axis.text = ggplot2::element_blank(),
-      axis.title = ggplot2::element_blank(),
-      axis.ticks = ggplot2::element_blank(),
-      panel.grid = ggplot2::element_blank(),
-      plot.margin = margin(0, 0, 0, 0)
-    ) +
+    ggplot2::coord_polar(theta = "y", start = 0) +
     ggplot2::scale_fill_manual(
       values = c(
-        "red", "orange", "steelblue", "green", "grey", "white",
+        colour_pal[c(2, 7, 4, 3, 8)], "white",
         "black", "grey", "white"
-        )
+        ), labels = manual_labels
     ) +
     ggplot2::scale_colour_manual(
       values = c(
-        "red", "orange", "steelblue", "green", "grey", "black",
-        "black", "black", grDevices::rgb(0, 0, 0, 0)
-      )
+        colour_pal[c(2, 7, 4, 3, 8)],
+        grDevices::rgb(0, 0, 0, 0),
+        "black", "black", "black"
+      ), labels = manual_labels
     ) +
-    ggplot2::facet_wrap(. ~ Biome_name)
-}
-
-# Plot sole adjusted D2 for the groups
-ggplot2::ggplot(
-  data = df_by_group,
-  ggplot2::aes(x = Group, y = Delta_adjD2, fill = Group)
+    ggplot2::guides(
+      fill = ggplot2::guide_legend(nrow = 3),
+      colour = ggplot2::guide_legend(nrow = 3)
+      ) +
+    ggplot2::geom_text(
+      ggplot2::aes(
+        x = ring, y = Delta_adjD2,
+        label = Label
+      ), size = 3, colour = "pink", show.legend = FALSE,
+      position = ggplot2::position_stack(vjust = 0.5)
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      legend.position = "bottom",
+      legend.box = "horizontal",
+      legend.title = element_blank(),
+      axis.text = ggplot2::element_blank(),
+      axis.title = ggplot2::element_text(),
+      axis.ticks = ggplot2::element_blank(),
+      panel.grid = ggplot2::element_blank(),
+      panel.spacing = grid::unit(-10, "pt"),
+      panel.background = ggplot2::element_blank(),
+      strip.text = ggplot2::element_text(margin = ggplot2::margin(b = -1)),
+      plot.margin = grid::unit(c(0, 0, 0, 0), "cm")
+    ) +
+    ggplot2::facet_wrap(. ~ Biome_name, nrow = 4) +
+    ggplot2::xlab(expression("" %<-% Mean~annual~Temperature)) +
+    ggplot2::ylab(expression("" %<-% Total~annual~Precipitation))
+  
+  ggplot2::ggsave(
+    filename = file.path(dir_fig, "Deviance_partitioning.pdf"),
+    plot = gg_d2, width = 5, height = 9
+    )
+  
+  file.copy(
+    file.path(dir_fig, "Deviance_partitioning.pdf"),
+    file.path(dir_dbx, "Deviance_partitioning.pdf"),
+    overwrite = TRUE
+    )
+} else {
+  # Plot sole adjusted D2 for the groups
+  ggplot2::ggplot(
+    data = df_by_group,
+    ggplot2::aes(x = Group, y = Delta_adjD2, fill = Group)
   ) +
-  ggplot2::geom_bar(stat = "identity") +
-  ggplot2::theme_bw() +
-  ggplot2::theme(legend.position = "none")
+    ggplot2::geom_bar(stat = "identity") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "none")
+}
 
 #------------------------------------------------------------------------------|
 #> Fit models to subsets of the data
 ##..............................................................................
 # For each predictor group, find the variable that best represents it
-best_vars <- lapply(pca_loadings, FUN = function(x) {names(x)[1]})
+best_vars_df <- pcd_loadings_df %>%
+  dplyr::group_by(group) %>%
+  dplyr::slice_max(order_by = pca_loading, n = 1, with_ties = FALSE)
+
+best_vars <- dplyr::pull(best_vars_df, variable)
+best_loadings <- dplyr::pull(best_vars_df, pca_loading)
 
 predictors_final <- as.character(best_vars)
 formula_mod_final <- make_formula(predictors_final)
@@ -739,8 +816,19 @@ hist(
 plots <- list()
 for (i in 1:length(predictors_final)) {
   pred <- predictors_final[i]
-  col <- palette.colors(palette = "Okabe-Ito")[i]
+  pca_loading <- best_loadings[i]
+  
+  if (pred %in% c("vpdmean", "ndvi_before", "nightlights", "slope")) {
+    col <- colour_pal[c(2, 3, 7, 4)][i]
+    lty = 1
+  } else {
+    col <- grDevices::palette("Tableau10")[c(3, 5, 2, 4)][i]
+    lty = 2
+  }
+  
+  # Make sure to set a colour if i is too high
   col <- ifelse(is.na(col), "black", col)
+  
   xlabel <- parse(
     text = sub(
       "AS[", "[as~",
@@ -763,6 +851,13 @@ for (i in 1:length(predictors_final)) {
     )
   )
   
+  if (as.character(xlabel) %in% c("SLOPE", "GHM", "NIGHTLIGHTS")) {
+    xlabel <- c(
+      SLOPE = "Slope", GHM = "Global Human Modification",
+      NIGHTLIGHTS = "Nightlights"
+      )[as.character(xlabel)]
+  }
+  
   resp <- modelled_response(model_list = models, data = data, variable = pred)
   
   plots[[pred]] <- ggplot2::ggplot(
@@ -776,10 +871,11 @@ for (i in 1:length(predictors_final)) {
     ggplot2::geom_line(
       ggplot2::aes(y = median),
       colour = col,
+      linetype = lty,
       linewidth = 1
     ) +
     ggplot2::xlab(xlabel) +
-    ggplot2::ylab("Fire probability") +
+    ggplot2::ylab(ifelse(i == 1, "Fire probability", "")) +
     ggplot2::ylim(c(0, 1)) +
     ggplot2::theme_bw()
 }
@@ -796,7 +892,7 @@ variance_components <- variance_components[
   order(variance_components, decreasing = TRUE)
 ]
 
-gridded_plot <- do.call(gridExtra::grid.arrange, plots)
+gridded_plot <- do.call(gridExtra::grid.arrange, c(plots, ncol = 4))
 ggplot2::ggsave(
   filename = file.path(
     dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")

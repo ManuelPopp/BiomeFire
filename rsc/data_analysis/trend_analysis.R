@@ -62,12 +62,37 @@ pvals <- df %>%
     ) %>%
   dplyr::ungroup()
 
+f_biome_climate <- file.path(dir_dat, "Biome_clim.csv")
+
+if (!file.exists(f_biome_climate)) {
+  read.csv(file.path(dir_lud, "chelsa_variables", "biome_clim.csv")) %>%
+    dplyr::filter(Biome <= 12) %>%
+    dplyr::select(Biome, Precipitation.sum, Temperature.mean) %>%
+    stats::setNames(nm = c("Biome", "Pr", "Tas")) %>%
+    dplyr::mutate(
+      rank_p = rank(Pr * (-1), ties.method = "first"),
+      rank_t = rank(Tas, ties.method = "first")
+    ) %>%
+    write.csv(f_biome_climate, row.names = FALSE)
+}
+
+biome_climate <- read.csv(f_biome_climate)
+plot_order <- biome_climate %>%
+  dplyr::arrange(rank_t, ceiling(rank_p / 4)) %>%
+  dplyr::pull(Biome)
+
+df$Biome_name <- factor(df$Biome_name, levels = biome_names[plot_order])
+pvals$Biome_name <- factor(pvals$Biome_name, levels = biome_names[plot_order])
+
 gg <- ggplot2::ggplot(
   data = df,
-  ggplot2::aes(x = Year, y = Burn_perc, colour = Biome_name, fill = Biome_name)
+  ggplot2::aes(x = Year, y = Burn_perc)
   ) +
   ggplot2::geom_point() +
-  ggplot2::geom_smooth(method = "lm", se = TRUE, alpha = 0.1) +
+  ggplot2::geom_smooth(
+    method = "lm", se = TRUE,
+    alpha = 0.5, colour = "black", fill = "gray50"
+    ) +
   ggplot2::theme_bw() +
   ggplot2::ylab("Burned area in %") +
   ggplot2::theme(legend.position = "none") +
@@ -85,7 +110,7 @@ if (!dir.exists(dir_fig_trends)) {
 }
 
 gg_wide <- gg +
-  ggplot2::facet_wrap(.~ Biome_name, nrow = 3, scales = "free_y")
+  ggplot2::facet_wrap(.~ Biome_name, ncol = 4, scales = "free_y")
 
 lapply(
   X = file.path(dir_fig_trends, paste0("TrendsByBiomeWIDE", c(".pdf", ".svg"))),
@@ -93,7 +118,7 @@ lapply(
 )
 
 gg_long <- gg +
-  ggplot2::facet_wrap(.~ Biome_name, nrow = 4, scales = "free_y") +
+  ggplot2::facet_wrap(.~ Biome_name, nrow = 4, ncol = 3, scales = "free_y") +
   ggplot2::theme(legend.position = "none")
 
 lapply(

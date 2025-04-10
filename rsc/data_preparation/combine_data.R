@@ -235,11 +235,20 @@ biome_num <- as.numeric(biome_num[[1]][length(biome_num[[1]])])
 
 #>----------------------------------------------------------------------------<|
 #> Load data
+warning(
+  paste(
+    "We were using old CHELSA data where scaling factors had to be applied",
+    "manually. For later input data, this is no longer valid.",
+    "Scaling factors should be set to 1 if the scaling was already done."
+    )
+  )
+
 scaling_factors <- list(
   "ndvi_before" = 0.00001,
   "tasmin" = 0.1,
   "tasmean" = 0.1,
-  "tasmax" = 0.1
+  "tasmax" = 0.1,
+  "pr" = 0.01
 )
 
 biome_table <- read.table(
@@ -287,9 +296,9 @@ if (!file.exists(f_data) | file.info(f_data)$mtime < mt | recalculate) {
       -c("Lightning", "LightningEquinox", "cmi_clim", "tasmax_clim")
       ) %>%
     dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !is.na(.))) %>%
-    dplyr::group_by(year) %>%
+    #dplyr::group_by(year) %>%
     #dplyr::sample_n(250, replace = FALSE) %>%
-    dplyr::ungroup() %>%
+    #dplyr::ungroup() %>%
     dplyr::mutate(
       dplyr::across(
         names(scaling_factors),
