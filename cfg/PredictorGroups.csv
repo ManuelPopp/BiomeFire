@@ -1,66 +1,66 @@
-Predictor,Group
-pr,abiotic
-spi06,abiotic
-spi12,abiotic
-spimin,abiotic
-spei06,abiotic
-spei12,abiotic
-speimin,abiotic
-swb,abiotic
-tasmin,abiotic
-tasmean,abiotic
-tasmax,abiotic
-vpdmean,abiotic
-vpdmax,abiotic
-npp_before,vegetation_structure_and_productivity
-npp_biome4_before,modelled_productivity
-npp_biome4,modelled_productivity
-ndvi_before,vegetation_structure_and_productivity
-osavi_before,vegetation_structure_and_productivity
-Lightning_clim,ignition_sources
-gHM,ignition_sources
-nightlights,ignition_sources
-aspect,terrain
-slope,terrain
-tpi,terrain
-canopyheight,vegetation_structure_and_productivity
-continentality_conrad,abiotic
-n_biomes,biome_shift
-n_biome_shifts,biome_shift
-share_not_main_biome,biome_shift
-share_not_expected_biome,biome_shift
-npp_pft_1_norm_slope,biome_shift
-npp_pft_2_norm_slope,biome_shift
-npp_pft_3_norm_slope,biome_shift
-npp_pft_4_norm_slope,biome_shift
-npp_pft_5_norm_slope,biome_shift
-npp_pft_6_norm_slope,biome_shift
-npp_pft_7_norm_slope,biome_shift
-npp_pft_8_norm_slope,biome_shift
-npp_pft_9_norm_slope,biome_shift
-npp_pft_10_norm_slope,biome_shift
-npp_pft_11_norm_slope,biome_shift
-npp_pft_12_norm_slope,biome_shift
-npp_pft_13_norm_slope,biome_shift
-npp_pft_1_norm_diff,biome_shift
-npp_pft_2_norm_diff,biome_shift
-npp_pft_3_norm_diff,biome_shift
-npp_pft_4_norm_diff,biome_shift
-npp_pft_5_norm_diff,biome_shift
-npp_pft_6_norm_diff,biome_shift
-npp_pft_7_norm_diff,biome_shift
-npp_pft_8_norm_diff,biome_shift
-npp_pft_9_norm_diff,biome_shift
-npp_pft_10_norm_diff,biome_shift
-npp_pft_11_norm_diff,biome_shift
-npp_pft_12_norm_diff,biome_shift
-npp_pft_13_norm_diff,biome_shift
-biome_dominant_pft_npp,modelled_productivity
-pr_diff,abiotic
-swb_diff,abiotic
-tasmean_diff,abiotic
-vpd_diff,abiotic
-pr_clim,abiotic
-swb_clim,abiotic
-tasmean_clim,abiotic
-vpd_clim,abiotic
+Predictor,Group,LaTeX
+pr,abiotic,P
+spi06,abiotic,SPI$_\text{06}$
+spi12,abiotic,SPI$_\text{12}$
+spimin,abiotic,SPI$_\text{min}$
+spei06,abiotic,SPEI$_\text{06}$
+spei12,abiotic,SPEI$_\text{12}$
+speimin,abiotic,SPEI$_\text{min}$
+swb,abiotic,SWB
+tasmin,abiotic,"T$_\text{as,min}$"
+tasmean,abiotic,"T$_\text{as,mean}$"
+tasmax,abiotic,"T$_\text{as,max}$"
+vpdmean,abiotic,VPD$_\text{mean}$
+vpdmax,abiotic,VPD$_\text{max}$
+npp_before,vegetation_structure_and_productivity,NPP$_\text{t-1a}$
+npp_biome4_before,modelled_productivity,"NPP$_\text{BIOME4,t-1a}$"
+npp_biome4,modelled_productivity,NPP$_\text{BIOME4}$
+ndvi_before,vegetation_structure_and_productivity,NDVI$_\text{t-1a}$
+osavi_before,vegetation_structure_and_productivity,OSAVI$_\text{t-1a}$
+Lightning_clim,ignition_sources,Lightning$_\text{climate}$
+gHM,ignition_sources,Human modification
+nightlights,ignition_sources,Light pollution
+aspect,terrain,Aspect
+slope,terrain,Slope
+tpi,terrain,TPI
+canopyheight,vegetation_structure_and_productivity,Canopy height
+continentality_conrad,abiotic,Contenitality (Conrad)
+n_biomes,biome_shift,N biomes
+n_biome_shifts,biome_shift,N biome shifts
+share_not_main_biome,biome_shift,Share not main biome
+share_not_expected_biome,biome_shift,Share not expected biome
+npp_pft_1_norm_slope,biome_shift,NPP(PFT1) slope
+npp_pft_2_norm_slope,biome_shift,NPP(PFT2) slope
+npp_pft_3_norm_slope,biome_shift,NPP(PFT3) slope
+npp_pft_4_norm_slope,biome_shift,NPP(PFT4) slope
+npp_pft_5_norm_slope,biome_shift,NPP(PFT5) slope
+npp_pft_6_norm_slope,biome_shift,NPP(PFT6) slope
+npp_pft_7_norm_slope,biome_shift,NPP(PFT7) slope
+npp_pft_8_norm_slope,biome_shift,NPP(PFT8) slope
+npp_pft_9_norm_slope,biome_shift,NPP(PFT9) slope
+npp_pft_10_norm_slope,biome_shift,NPP(PFT10) slope
+npp_pft_11_norm_slope,biome_shift,NPP(PFT11) slope
+npp_pft_12_norm_slope,biome_shift,NPP(PFT12) slope
+npp_pft_13_norm_slope,biome_shift,NPP(PFT13) slope
+npp_pft_1_norm_diff,biome_shift,$\Delta$NPP(PFT1)
+npp_pft_2_norm_diff,biome_shift,$\Delta$NPP(PFT2)
+npp_pft_3_norm_diff,biome_shift,$\Delta$NPP(PFT3)
+npp_pft_4_norm_diff,biome_shift,$\Delta$NPP(PFT4)
+npp_pft_5_norm_diff,biome_shift,$\Delta$NPP(PFT5)
+npp_pft_6_norm_diff,biome_shift,$\Delta$NPP(PFT6)
+npp_pft_7_norm_diff,biome_shift,$\Delta$NPP(PFT7)
+npp_pft_8_norm_diff,biome_shift,$\Delta$NPP(PFT8)
+npp_pft_9_norm_diff,biome_shift,$\Delta$NPP(PFT9)
+npp_pft_10_norm_diff,biome_shift,$\Delta$NPP(PFT10)
+npp_pft_11_norm_diff,biome_shift,$\Delta$NPP(PFT11)
+npp_pft_12_norm_diff,biome_shift,$\Delta$NPP(PFT12)
+npp_pft_13_norm_diff,biome_shift,$\Delta$NPP(PFT13)
+biome_dominant_pft_npp,modelled_productivity,NPP$_\text{dominant PFT}$
+pr_diff,abiotic,$\Delta$P
+swb_diff,abiotic,$\Delta$SWB
+tasmean_diff,abiotic,"$\Delta$T$_\text{as,mean}$"
+vpd_diff,abiotic,$\Delta$VPD
+pr_clim,abiotic,P$_\text{climate}$
+swb_clim,abiotic,SWB$_\text{climate}$
+tasmean_clim,abiotic,"T$_\text{as,mean,climate}$"
+vpd_clim,abiotic,VPD$_\text{climate}$

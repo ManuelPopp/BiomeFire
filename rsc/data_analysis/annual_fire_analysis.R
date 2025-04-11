@@ -305,7 +305,8 @@ if (interactivemode) {
 f_data <- file.path(dir_dat, "samples", paste0(biome, ".csv"))
 
 ## Set a vision deficiency-compatible colour palette
-colour_pal <- grDevices::palette.colors(palette = "R4")
+colour_pal <- grDevices::palette.colors(palette = "R4")[c(2, 7, 4, 3, 8)]
+colour_alt <- grDevices::palette("Tableau10")[c(3, 2, 4, 5)]
 
 #>----------------------------------------------------------------------------<|
 #> Get biome outlines
@@ -521,9 +522,21 @@ pcd_loadings_df <- data.frame(
 )
 
 write.csv(
-  pcd_loadings_df,
+  pcd_loadings_df %>% dplyr::mutate(biome = biome),
   file = file.path(dir_out, "pca_loadings", paste0(biome, ".csv")),
   row.names = FALSE
+  )
+
+write.table(
+  pcd_loadings_df %>%
+    dplyr::mutate(
+      variable = predictor_groups$LaTeX[
+        match(variable, predictor_groups$Predictor)
+        ],
+      group = gsub("_", " ", group, fixed = TRUE)
+    ),
+  file = file.path(dir_dbx, "suppl_files", paste0("Loadings", biome, ".tex")),
+  row.names = FALSE, col.names = FALSE, sep = " & ", eol = "\\\\\n", quote = FALSE
   )
 
 # Fit full model using PC1 and PC2 of each predictor group
@@ -699,13 +712,13 @@ if (all(file.exists(all_files))) {
     ggplot2::coord_polar(theta = "y", start = 0) +
     ggplot2::scale_fill_manual(
       values = c(
-        colour_pal[c(2, 7, 4, 3, 8)], "white",
+        colour_pal, "white",
         "black", "grey", "white"
         ), labels = manual_labels
     ) +
     ggplot2::scale_colour_manual(
       values = c(
-        colour_pal[c(2, 7, 4, 3, 8)],
+        colour_pal,
         grDevices::rgb(0, 0, 0, 0),
         "black", "black", "black"
       ), labels = manual_labels
@@ -818,16 +831,13 @@ for (i in 1:length(predictors_final)) {
   pred <- predictors_final[i]
   pca_loading <- best_loadings[i]
   
-  if (pred %in% c("vpdmean", "ndvi_before", "nightlights", "slope")) {
-    col <- colour_pal[c(2, 3, 7, 4)][i]
-    lty = 1
+  if (tolower(pred) %in% c("vpdmean", "ndvi_before", "ghm", "slope")) {
+    col <- colour_pal[i]
+    lty <- 1
   } else {
-    col <- grDevices::palette("Tableau10")[c(3, 5, 2, 4)][i]
-    lty = 2
+    col <- colour_alt[i]
+    lty <- 2
   }
-  
-  # Make sure to set a colour if i is too high
-  col <- ifelse(is.na(col), "black", col)
   
   xlabel <- parse(
     text = sub(
@@ -878,6 +888,12 @@ for (i in 1:length(predictors_final)) {
     ggplot2::ylab(ifelse(i == 1, "Fire probability", "")) +
     ggplot2::ylim(c(0, 1)) +
     ggplot2::theme_bw()
+  
+  # Make sure colour and linetype are removed after issues arose in commandline
+  # mode...
+  rm(col)
+  rm(lty)
+  gc()
 }
 
 # Estimate variance components for variables to sort plots

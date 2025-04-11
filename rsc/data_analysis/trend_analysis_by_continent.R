@@ -146,7 +146,7 @@ kendall <- df %>%
 sidx <- which(kendall$p_value < 0.05)
 kendall$p_value <- as.character(signif(kendall$p_value, digits = 2))
 
-kendall[sidx, "p_value"] <- paste0(kendall$p_value[sidx], "\\\\llag{\\*}")
+kendall[sidx, "p_value"] <- paste0(kendall$p_value[sidx], "\\rlap{*}")
 
 write.table(
   kendall, file = file.path(dir_dbx_suppl, "kendall_continent.tex"),
