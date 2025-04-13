@@ -305,8 +305,10 @@ if (interactivemode) {
 f_data <- file.path(dir_dat, "samples", paste0(biome, ".csv"))
 
 ## Set a vision deficiency-compatible colour palette
-colour_pal <- grDevices::palette.colors(palette = "R4")[c(2, 7, 4, 3, 8)]
-colour_alt <- grDevices::palette("Tableau10")[c(3, 2, 4, 5)]
+colour_pal <- as.character(
+  grDevices::palette.colors(palette = "R4")[1:8]
+  )[c(2, 7, 4, 3, 8)]
+colour_alt <- as.character(grDevices::palette("Tableau10")[1:5])[c(3, 2, 4, 5)]
 
 #>----------------------------------------------------------------------------<|
 #> Get biome outlines
