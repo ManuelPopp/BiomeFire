@@ -15,6 +15,8 @@ dir_dat <- file.path(dir_main, "dat")
 dir_fig <- file.path(dir_main, "fig")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_imd <- file.path(dir_lud, "intermediate_data")
+dir_dbx <- "C:/Users/poppman/Dropbox/Apps/Overleaf/BiomeFire"
+dir_dbx_suppl <- file.path(dir_dbx, "suppl_files")
 
 biome_names <- c(
   "(Sub)tropical Moist BLF",
@@ -88,11 +90,12 @@ gg <- ggplot2::ggplot(
   data = df,
   ggplot2::aes(x = Year, y = Burn_perc)
   ) +
-  ggplot2::geom_point() +
   ggplot2::geom_smooth(
     method = "lm", se = TRUE,
     alpha = 0.5, colour = "black", fill = "gray50"
     ) +
+  ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::geom_point() +
   ggplot2::theme_bw() +
   ggplot2::ylab("Burned area in %") +
   ggplot2::theme(legend.position = "none") +
@@ -128,6 +131,33 @@ lapply(
 
 file.copy(
   file.path(dir_fig_trends, "TrendsByBiomeLONG.pdf"),
-  file.path(dir_dbx_suppl, "TrendsByBiomeLONG.pdf"),
+  file.path(dir_dbx, "TrendsByBiomeLONG.pdf"),
+  overwrite = TRUE
+)
+
+# Create boxplots
+gg_bp <- ggplot2::ggplot(
+  data = df,
+  ggplot2::aes(
+    x = Biome_name, y = Burn_perc
+    )
+  ) +
+  ggplot2::geom_boxplot() +
+  ggplot2::coord_flip() +
+  ggplot2::theme_bw() +
+  ggplot2::theme(
+    legend.position = "none",
+    axis.title.y = ggplot2::element_blank()
+    ) +
+  ggplot2::ylab("Burned area in percent")
+
+ggplot2::ggsave(
+  filename = file.path(dir_fig, "Boxplot_burned_area.pdf"),
+  plot = gg_bp, width = 9, height = 4
+  )
+
+file.copy(
+  file.path(dir_fig, "Boxplot_burned_area.pdf"),
+  file.path(dir_dbx_suppl, "Boxplot_burned_area.pdf"),
   overwrite = TRUE
 )

@@ -707,21 +707,21 @@ if (all(file.exists(all_files))) {
     deviance_df_plot,
     ggplot2::aes(
       x = ring, xmin = ring - 0.5, xmax = ring, y = Delta_adjD2,
-      fill = Group, color = Group
+      fill = Group#, color = Group
       )
   ) +
     ggplot2::geom_bar(stat = "identity", width = 0.5, size = 0.75) +
     ggplot2::coord_polar(theta = "y", start = 0) +
     ggplot2::scale_fill_manual(
       values = c(
-        colour_pal, "white",
-        "black", "grey", "white"
+        colour_pal, "grey95",
+        "black", "grey50", "grey90"
         ), labels = manual_labels
     ) +
     ggplot2::scale_colour_manual(
       values = c(
         colour_pal,
-        grDevices::rgb(0, 0, 0, 0),
+        "grey95",
         "black", "black", "black"
       ), labels = manual_labels
     ) +
@@ -770,7 +770,7 @@ if (all(file.exists(all_files))) {
     data = df_by_group,
     ggplot2::aes(x = Group, y = Delta_adjD2, fill = Group)
   ) +
-    ggplot2::geom_bar(stat = "identity") +
+    ggplot2::geom_bar(stat = "identity", colour = NA) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "none")
 }

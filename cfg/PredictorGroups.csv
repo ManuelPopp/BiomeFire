@@ -1,17 +1,17 @@
 Predictor,Group,LaTeX
-pr,abiotic,P
-spi06,abiotic,SPI$_\text{06}$
-spi12,abiotic,SPI$_\text{12}$
-spimin,abiotic,SPI$_\text{min}$
-spei06,abiotic,SPEI$_\text{06}$
-spei12,abiotic,SPEI$_\text{12}$
-speimin,abiotic,SPEI$_\text{min}$
-swb,abiotic,SWB
-tasmin,abiotic,"T$_\text{as,min}$"
-tasmean,abiotic,"T$_\text{as,mean}$"
-tasmax,abiotic,"T$_\text{as,max}$"
-vpdmean,abiotic,VPD$_\text{mean}$
-vpdmax,abiotic,VPD$_\text{max}$
+pr,atmospheric,P
+spi06,atmospheric,SPI$_\text{06}$
+spi12,atmospheric,SPI$_\text{12}$
+spimin,atmospheric,SPI$_\text{min}$
+spei06,atmospheric,SPEI$_\text{06}$
+spei12,atmospheric,SPEI$_\text{12}$
+speimin,atmospheric,SPEI$_\text{min}$
+swb,atmospheric,SWB
+tasmin,atmospheric,"T$_\text{as,min}$"
+tasmean,atmospheric,"T$_\text{as,mean}$"
+tasmax,atmospheric,"T$_\text{as,max}$"
+vpdmean,atmospheric,VPD$_\text{mean}$
+vpdmax,atmospheric,VPD$_\text{max}$
 npp_before,vegetation_structure_and_productivity,NPP$_\text{t-1a}$
 npp_biome4_before,modelled_productivity,"NPP$_\text{BIOME4,t-1a}$"
 npp_biome4,modelled_productivity,NPP$_\text{BIOME4}$
@@ -24,7 +24,7 @@ aspect,terrain,Aspect
 slope,terrain,Slope
 tpi,terrain,TPI
 canopyheight,vegetation_structure_and_productivity,Canopy height
-continentality_conrad,abiotic,Contenitality (Conrad)
+continentality_conrad,atmospheric,Contenitality (Conrad)
 n_biomes,biome_shift,N biomes
 n_biome_shifts,biome_shift,N biome shifts
 share_not_main_biome,biome_shift,Share not main biome
@@ -56,11 +56,11 @@ npp_pft_11_norm_diff,biome_shift,$\Delta$NPP(PFT11)
 npp_pft_12_norm_diff,biome_shift,$\Delta$NPP(PFT12)
 npp_pft_13_norm_diff,biome_shift,$\Delta$NPP(PFT13)
 biome_dominant_pft_npp,modelled_productivity,NPP$_\text{dominant PFT}$
-pr_diff,abiotic,$\Delta$P
-swb_diff,abiotic,$\Delta$SWB
-tasmean_diff,abiotic,"$\Delta$T$_\text{as,mean}$"
-vpd_diff,abiotic,$\Delta$VPD
-pr_clim,abiotic,P$_\text{climate}$
-swb_clim,abiotic,SWB$_\text{climate}$
-tasmean_clim,abiotic,"T$_\text{as,mean,climate}$"
-vpd_clim,abiotic,VPD$_\text{climate}$
+pr_diff,atmospheric,$\Delta$P
+swb_diff,atmospheric,$\Delta$SWB
+tasmean_diff,atmospheric,"$\Delta$T$_\text{as,mean}$"
+vpd_diff,atmospheric,$\Delta$VPD
+pr_clim,atmospheric,P$_\text{climate}$
+swb_clim,atmospheric,SWB$_\text{climate}$
+tasmean_clim,atmospheric,"T$_\text{as,mean,climate}$"
+vpd_clim,atmospheric,VPD$_\text{climate}$
