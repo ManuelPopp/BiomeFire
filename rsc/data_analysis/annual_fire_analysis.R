@@ -51,7 +51,7 @@ import(
   "terra", "dplyr", "purrr", "tidyterra", "progress", "car", "MASS",
   "glmtoolbox", "performance", "ggplot2", "RSpectra", "spaMM", "ROI.plugin.glpk",
   "mgcv", "tidyr", "gam", "corrplot", "doParallel", "yardstick", "plotly",
-  "ecospat", "caret", "spdep", "spsurvey",
+  "ecospat", "caret", "spdep", "spsurvey", "patchwork",
   dependencies = TRUE
 )
 
@@ -259,7 +259,7 @@ n_samples <- 1e3
 biome_id <- 1
 print_to_pdf <- TRUE
 use_predictor_groups <- c(
-  "abiotic", "ignition_sources", "terrain",
+  "atmospheric", "ignition_sources", "terrain",
   "vegetation_structure_and_productivity"
   )
 predictor_group_names <- c(
@@ -828,6 +828,7 @@ hist(
   col = grDevices::rgb(0, 102, 102, 200, maxColorValue = 255)
 )
 
+plots_1 <- list()
 plots <- list()
 for (i in 1:length(predictors_final)) {
   pred <- predictors_final[i]
@@ -865,14 +866,14 @@ for (i in 1:length(predictors_final)) {
   
   if (as.character(xlabel) %in% c("SLOPE", "GHM", "NIGHTLIGHTS")) {
     xlabel <- c(
-      SLOPE = "Slope", GHM = "Global Human Modification",
+      SLOPE = "Slope", GHM = "Human Modification",
       NIGHTLIGHTS = "Nightlights"
       )[as.character(xlabel)]
   }
   
   resp <- modelled_response(model_list = models, data = data, variable = pred)
   
-  plots[[pred]] <- ggplot2::ggplot(
+  plots_1[[pred]] <- ggplot2::ggplot(
     data = resp, ggplot2::aes(x = predictor_value)
   ) +
     ggplot2::geom_ribbon(
@@ -890,6 +891,26 @@ for (i in 1:length(predictors_final)) {
     ggplot2::ylab(ifelse(i == 1, "Fire probability", "")) +
     ggplot2::ylim(c(0, 1)) +
     ggplot2::theme_bw()
+  
+  if (i == 1) {
+    plots[[pred]] <- plots_1[[pred]] +
+      ggplot2::theme(
+        axis.title.y = ggplot2::element_text(size = 14),
+        axis.text.y = ggplot2::element_text(size = 12),
+        axis.ticks.y = ggplot2::element_line(),
+        axis.title.x = ggplot2::element_text(size = 14),
+        axis.text.x = ggplot2::element_text(size = 12)
+      )
+  } else {
+    plots[[pred]] <- plots_1[[pred]] +
+      ggplot2::theme(
+        axis.title.y = ggplot2::element_blank(),
+        axis.text.y = ggplot2::element_blank(),
+        axis.ticks.y = ggplot2::element_blank(),
+        axis.title.x = ggplot2::element_text(size = 14),
+        axis.text.x = ggplot2::element_text(size = 12)
+      )
+  }
   
   # Make sure colour and linetype are removed after issues arose in commandline
   # mode...
@@ -910,14 +931,16 @@ variance_components <- variance_components[
   order(variance_components, decreasing = TRUE)
 ]
 
-gridded_plot <- do.call(gridExtra::grid.arrange, c(plots, ncol = 4))
+gridded_plot <- do.call(patchwork::wrap_plots, c(plots, ncol = 4)) %>%
+  ggplotify::as.ggplot()
+
 ggplot2::ggsave(
-  filename = file.path(
+  file.path(
     dir_fig, "modelled_responses", paste0("Modelled_responses", biome, ".pdf")
   ),
   plot = gridded_plot,
-  height = 4 * max(gridded_plot$layout$t),
-  width = 4 * max(gridded_plot$layout$l)
+  height = 4,
+  width = 14
 )
 
 cat(
