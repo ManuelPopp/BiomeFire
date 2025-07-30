@@ -72,16 +72,17 @@ if (length(args) > 0) {
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
   sub_clim <- "chelsa_kg"
+  dir_fire <- "L:/poppman/data/bff/dat/annual_fire_maps"
 } else {
   dir_main <- "/lud11/poppman/data/bff"
   sub_clim <- file.path("lud11", "chelsa_kg")
+  dir_fire <- "/lud11/poppman/data/bff/dat/annual_fire_maps"
 }
 
 dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
 dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
-dir_fire <- "L:/poppman/data/bff/dat/annual_fire_maps"
 
 wsl_cols <- c(
   rgb(0, 102, 102, maxColorValue = 255),
