@@ -872,6 +872,11 @@ for (i in 1:length(predictors_final)) {
   }
   
   resp <- modelled_response(model_list = models, data = data, variable = pred)
+  write.csv(
+    resp,
+    file = file.path(dir_out, paste0(pred, biome, ".csv")),
+    row.names = FALSE
+    )
   
   plots_1[[pred]] <- ggplot2::ggplot(
     data = resp, ggplot2::aes(x = predictor_value)

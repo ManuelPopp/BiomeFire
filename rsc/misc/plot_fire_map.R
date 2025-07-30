@@ -127,3 +127,29 @@ ggplot2::ggsave(
   filename = file.path(dir_dbx, "Fire_map.pdf"),
   plot = gg_map, width = 10, height = 6
   )
+
+# Plot biomes without fire
+gg_biomes <- ggplot2::ggplot() +
+  ggplot2::geom_sf(
+    data = biomes_equalearth, ggplot2::aes(fill = Biome), color = NA
+  ) +
+  ggplot2::geom_sf(
+    data = boundary_equalearth, color = "grey", fill = NA
+  ) +
+  ggplot2::coord_sf(
+    crs = "EPSG:8857"
+  ) +
+  ggplot2::scale_fill_manual(values = colours) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "none",
+    panel.grid.major = ggplot2::element_line(),
+    panel.grid.minor = ggplot2::element_blank()
+  ) +
+  ggplot2::scale_x_continuous(breaks = seq(-180, 180, by = 30)) +
+  ggplot2::scale_y_continuous(breaks = seq(-90, 90, by = 30))
+
+ggplot2::ggsave(
+  filename = file.path(dir_dbx, "Biome_map.svg"),
+  plot = gg_biomes, width = 10, height = 6
+)

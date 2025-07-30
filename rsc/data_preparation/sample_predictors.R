@@ -80,7 +80,7 @@ recalculate <- TRUE
 recalculate_pred_mask <- FALSE
 seed <- 42
 year <- as.numeric(args[1])
-set.seed(year %% seed)
+set.seed(year + seed)
 
 if (length(args) > 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[2]))

@@ -3,6 +3,7 @@ require("tidyr")
 require("purrr")
 require("trend")
 require("ggplot2")
+
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
   sub_clim <- "chelsa_kg"
@@ -51,6 +52,7 @@ df <- do.call(rbind, lapply(X = files, FUN = read.csv)) %>%
     ) %>%
   dplyr::group_by(Biome) %>%
   dplyr::mutate(
+    Biome_name = factor(Biome_name, levels = biome_names),
     Normalised = (Burned - min(Burned)) / (max(Burned) - min(Burned))
     ) %>%
   dplyr::ungroup()
@@ -136,24 +138,31 @@ file.copy(
 )
 
 # Create boxplots
+df$Biome_name <- factor(df$Biome_name, levels = biome_names[rev(plot_order)])
 gg_bp <- ggplot2::ggplot(
   data = df,
   ggplot2::aes(
-    x = Biome_name, y = Burn_perc
+    x = Biome_name, y = Burn_perc, colour = Biome_name
     )
   ) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(lwd = .7) +
   ggplot2::coord_flip() +
   ggplot2::theme_bw() +
   ggplot2::theme(
     legend.position = "none",
     axis.title.y = ggplot2::element_blank()
     ) +
-  ggplot2::ylab("Burned area in percent")
+  ggplot2::ylab("Burned area in percent") +
+  ggplot2::scale_color_manual(
+    values = c(
+      "#098742", "#c7b839", "#9cce4e", "#1f7762", "#087186", "#81c4a1",
+      "#ffa42c", "#ffd338", "#66d0c3", "#cea675", "#bddf98", "#ff2e17", "grey95"
+      )[rev(plot_order)]
+    )
 
 ggplot2::ggsave(
   filename = file.path(dir_fig, "Boxplot_burned_area.pdf"),
-  plot = gg_bp, width = 9, height = 4
+  plot = gg_bp, width = 8, height = 4
   )
 
 file.copy(
