@@ -144,12 +144,16 @@ print("Cropping layers...")
 fire_cropped <- terra::crop(fire, extent)
 biome_cropped <- terra::crop(biome, extent)
 pft_cropped <- terra::crop(pft, extent)
+mask_combined <- c(biome_cropped, pft_cropped) %>%
+  terra::app(fun = "anyNA") %>%
+  terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
 
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
 print("Loading predictor...")
 predictor <- terra::rast(chelsa_climate) %>%
-  terra::crop(extent)
+  terra::crop(extent) %>%
+  terra::mask(mask_combined)
 
 p <- quantile(terra::values(predictor), probs = seq(0, 1, 0.1), na.rm = TRUE)
 p[1] <- p[1] - 1
@@ -162,17 +166,11 @@ df_out <- NULL
 for (bin in mat[, 3]) {
   # Create combined mask
   print("Creating predictor mask...")
-  pred_mask <- (predictor == bin) %>%
-    terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2)) %>%
-    terra::crop(extent)
-  
-  print("Creating combined mask...")
-  mask_combined <- c(biome_cropped, pft_cropped, pred_mask) %>%
-    terra::app(fun = "anyNA") %>%
+  pred_mask <- (predictor_binned == bin) %>%
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
   
   fire_masked <- fire_cropped %>%
-    terra::mask(mask_combined, maskvalue = NA, updatevalue = NA)
+    terra::mask(pred_mask, maskvalue = NA, updatevalue = NA)
   
   ftab <- terra::freq(fire_masked)
   names(ftab) <- c("Year", "Fire", paste0("Count_bin_", bin))
