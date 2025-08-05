@@ -63,6 +63,10 @@ recalculate <- TRUE
 seed <- 42
 set.seed(seed)
 
+climate_var <- "swb"
+quantile_step <- 0.2
+n_bin <- floor(1 / quantile_step)
+
 if (length(args) > 0) {
   biome_name <- paste0("Olson_biome_", as.character(args[1]))
 } else {
@@ -90,7 +94,7 @@ wsl_cols <- c(
 )
 
 # Directories
-chelsa_climate <- file.path(dir_stc, "chelsa_1981-2010", "vpd_clim.tif")
+chelsa_climate <- file.path(dir_stc, "chelsa_1981-2010", paste0(climate_var, "_clim.tif"))
 
 # Response
 f_fire <- list.files(dir_fire, pattern = ".tif", full.names = TRUE)
@@ -155,10 +159,10 @@ predictor <- terra::rast(chelsa_climate) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined)
 
-p <- quantile(terra::values(predictor), probs = seq(0, 1, 0.1), na.rm = TRUE)
+p <- quantile(terra::values(predictor), probs = seq(0, 1, quantile_step), na.rm = TRUE)
 p[1] <- p[1] - 1
-p[11] <- p[11] + 1
-mat <- cbind(p[-11], p[-1], 1:10)
+p[length(seq(0, 1, quantile_step))] <- p[length(seq(0, 1, quantile_step))] + 1
+mat <- cbind(p[-11], p[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
 
 predictor_binned <- terra::classify(predictor, mat)
 
@@ -183,10 +187,15 @@ for (bin in mat[, 3]) {
       dplyr::pull(paste0("Count_bin_", bin))
   }
   
+  subdir <- paste0("climate_bin_data_", climate_var, n_bin)
+  if (!dir.exists(file = file.path(dir_lud, subdir))) {
+    dir.create(file.path(dir_lud, subdir))
+  }
+  
   save(
     df_out,
     file = file.path(
-      dir_lud, "climate_bin_data", paste0(biome_name, "_bin.Rsave")
+      dir_lud, subdir, paste0(biome_name, "_bin.Rsave")
       )
     )
   rm(fire_masked)
