@@ -162,7 +162,7 @@ predictor <- terra::rast(chelsa_climate) %>%
 p <- quantile(terra::values(predictor), probs = seq(0, 1, quantile_step), na.rm = TRUE)
 p[1] <- p[1] - 1
 p[length(seq(0, 1, quantile_step))] <- p[length(seq(0, 1, quantile_step))] + 1
-mat <- cbind(p[-11], p[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
+mat <- cbind(p[-length(p)], p[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
 
 predictor_binned <- terra::classify(predictor, mat)
 
