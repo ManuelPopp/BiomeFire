@@ -188,7 +188,7 @@ for (bin in mat[, 3]) {
   }
   
   subdir <- paste0("climate_bin_data_", climate_var, n_bin)
-  if (!dir.exists(file = file.path(dir_lud, subdir))) {
+  if (!dir.exists(file.path(dir_lud, subdir))) {
     dir.create(file.path(dir_lud, subdir))
   }
   
