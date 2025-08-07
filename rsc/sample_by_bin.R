@@ -63,7 +63,9 @@ recalculate <- TRUE
 seed <- 42
 set.seed(seed)
 
-climate_var <- "swb"
+climate_var_0 <- "tasmean"
+climate_var_1 <- "swb"
+
 quantile_step <- 0.2
 n_bin <- floor(1 / quantile_step)
 
@@ -94,7 +96,12 @@ wsl_cols <- c(
 )
 
 # Directories
-chelsa_climate <- file.path(dir_stc, "chelsa_1981-2010", paste0(climate_var, "_clim.tif"))
+chelsa_climate_0 <- file.path(
+  dir_stc, "chelsa_1981-2010", paste0(climate_var_0, "_clim.tif")
+  )
+chelsa_climate_1 <- file.path(
+  dir_stc, "chelsa_1981-2010", paste0(climate_var_1, "_clim.tif")
+  )
 
 # Response
 f_fire <- list.files(dir_fire, pattern = ".tif", full.names = TRUE)
@@ -155,51 +162,82 @@ mask_combined <- c(biome_cropped, pft_cropped) %>%
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
 print("Loading predictor...")
-predictor <- terra::rast(chelsa_climate) %>%
+predictor_0 <- terra::rast(chelsa_climate_0) %>%
+  terra::crop(extent) %>%
+  terra::mask(mask_combined)
+predictor_1 <- terra::rast(chelsa_climate_1) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined)
 
-p <- quantile(terra::values(predictor), probs = seq(0, 1, quantile_step), na.rm = TRUE)
-p[1] <- p[1] - 1
-p[length(seq(0, 1, quantile_step))] <- p[length(seq(0, 1, quantile_step))] + 1
-mat <- cbind(p[-length(p)], p[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
+p0 <- quantile(
+  terra::values(predictor_0), probs = seq(0, 1, quantile_step), na.rm = TRUE
+  )
+p0[1] <- p0[1] - 1
+p0[length(seq(0, 1, quantile_step))] <- p0[length(seq(0, 1, quantile_step))] + 1
+mat0 <- cbind(p0[-length(p0)], p0[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
 
-predictor_binned <- terra::classify(predictor, mat)
+predictor_0_binned <- terra::classify(predictor_0, mat0)
+
+p1 <- quantile(
+  terra::values(predictor_1), probs = seq(0, 1, quantile_step), na.rm = TRUE
+)
+p1[1] <- p1[1] - 1
+p1[length(seq(0, 1, quantile_step))] <- p1[length(seq(0, 1, quantile_step))] + 1
+mat1 <- cbind(p1[-length(p1)], p1[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
+
+predictor_1_binned <- terra::classify(predictor_1, mat1)
 
 df_out <- NULL
-for (bin in mat[, 3]) {
+for (bin0 in mat0[, 3]) {
   # Create combined mask
   print("Creating predictor mask...")
-  pred_mask <- (predictor_binned == bin) %>%
+  pred_mask_0 <- (predictor_0_binned == bin0) %>%
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
   
-  fire_masked <- fire_cropped %>%
-    terra::mask(pred_mask, maskvalue = NA, updatevalue = NA)
-  
-  ftab <- terra::freq(fire_masked)
-  names(ftab) <- c("Year", "Fire", paste0("Count_bin_", bin))
-  fdat <- as.data.frame(ftab)
-  
-  if (is.null(df_out)) {
-    df_out <- fdat
-  } else {
-    df_out[, paste0("Count_bin_", bin)] <- fdat %>%
-      dplyr::pull(paste0("Count_bin_", bin))
-  }
-  
-  subdir <- paste0("climate_bin_data_", climate_var, n_bin)
-  if (!dir.exists(file.path(dir_lud, subdir))) {
-    dir.create(file.path(dir_lud, subdir))
-  }
-  
-  save(
-    df_out,
-    file = file.path(
-      dir_lud, subdir, paste0(biome_name, "_bin.Rsave")
+  for (bin1 in mat1[, 3]) {
+    pred_mask_1 <- (predictor_1_binned == bin1) %>%
+      terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
+    
+    pred_mask_combined <- c(pred_mask_0, pred_mask_1) %>%
+      terra::app(fun = "anyNA") %>%
+      terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
+    
+    fire_masked <- fire_cropped %>%
+      terra::mask(pred_mask_combined, maskvalue = NA, updatevalue = NA)
+    
+    ftab <- terra::freq(fire_masked)
+    names(ftab) <- c("Year", "Fire", "Count")
+    fdat <- as.data.frame(ftab)
+    fdat$Bin0 <- bin0
+    fdat$Bin1 <- bin1
+    
+    if (is.null(df_out)) {
+      df_out <- fdat
+    } else {
+      df_out[, paste0("Count_bin_", bin)] <- fdat %>%
+        dplyr::pull(paste0("Count_bin_", bin))
+    }
+    
+    subdir <- paste(
+      "climate_bin_data", climate_var_0, climate_var_1, n_bin,
+      sep = "_"
+      )
+    if (!dir.exists(file.path(dir_lud, subdir))) {
+      dir.create(file.path(dir_lud, subdir))
+    }
+    
+    save(
+      df_out,
+      file = file.path(
+        dir_lud, subdir, paste0(biome_name, "_bin.Rsave")
       )
     )
-  rm(fire_masked)
-  rm(mask_combined)
-  rm(pred_mask)
+    
+    rm(fire_masked)
+    rm(pred_mask_1)
+    gc()
+  }
+  
+  rm(pred_mask_0)
   gc()
 }
