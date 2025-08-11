@@ -18,15 +18,15 @@ for (file in files) {
     "/lud11/poppman/data/bff/dat/lud11/annual/fire_resampled_MODIS", f_name
     )
   if (!file.exists(dst)) {
-  fann <- terra::rast(file) %>%
-    terra::crop(terra::ext(-180, 180, -90, 90)) %>%
-    terra::writeRaster(
-        dst,
-        overwrite = TRUE
-        )
-  print(fann)
-  rm(fann)
-  gc()
+    fann <- terra::rast(file) %>%
+      terra::crop(terra::ext(-180, 180, -90, 90)) %>%
+      terra::writeRaster(
+          dst,
+          overwrite = TRUE
+          )
+    print(fann)
+    rm(fann)
+    gc()
   }
   pb$tick()
 }

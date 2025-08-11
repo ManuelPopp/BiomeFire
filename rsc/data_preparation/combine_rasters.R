@@ -140,7 +140,7 @@ pb <- progress_bar$new(
 
 for (year in unique(files$year)) {
   dst <- file.path(
-    dir_lud, "annual_fire_maps", paste0("Fire_", year, ".tif")
+    dir_dat, "annual_fire_maps", paste0("Fire_", year, ".tif")
   )
   
   if (!file.exists(dst) | calculate_anew) {

@@ -3,7 +3,7 @@ require("tidyr")
 require("trend")
 require("scales")
 
-dir <- "L:/poppman/data/bff/dat/lud11/climate_bin_data"
+dir <- "L:/poppman/data/bff/dat/lud11/climate_bin_data_tasmean_swb_5"
 files <- list.files(dir, pattern = ".Rsave", full.names = TRUE)
 i <- 10
 
@@ -25,9 +25,9 @@ biome_names <- c(
 )
 
 ggplots <- list()
-slopes_df <- data.frame()
+trends_df <- data.frame()
 
-for (i in 1:10) {
+for (i in 1:length(files)) {
   f_data <- files[i]
   load(f_data)
   
@@ -38,23 +38,25 @@ for (i in 1:10) {
   nonburned <- df_out[which(df_out$Fire == 0),]
   
   df <- burned
-  df[, -1] <- burned[, -1] / nonburned[, -1]
+  df$Percentage <- (burned$Count * 100) / (nonburned$Count + burned$Count)
   
-  df <- df[, -2]
-  df$Year <- 2002:2024
+  df <- df[, -c(2, 3)]
+  
+  if (df$Year[1] < 2000) {
+    df$Year <- df$Year + 2000
+  }
+  
   dfl <- df %>%
-    tidyr::pivot_longer(
-      cols = tidyr::all_of(names(df[, -1]))
-      ) %>%
+    dplyr::mutate(Bins = paste0(Bin0, Bin1)) %>%
     dplyr::mutate(
-      Bin = factor(name)
+      Bins = factor(Bins)
     )
   
   gg <- ggplot2::ggplot(
-    data = dfl, ggplot2::aes(x = Year, y = value, colour = Bin)
+    data = dfl, ggplot2::aes(x = Year, y = Percentage, colour = Bins)
   ) +
     ggplot2::geom_point() +
-    ggplot2::ylab("Pixel fraction burned") +
+    ggplot2::ylab("Pixels burned in %") +
     ggplot2::geom_smooth(method = "lm", se = FALSE) +
     ggplot2::theme_bw() +
     ggplot2::ggtitle(biome_name)
@@ -65,55 +67,44 @@ for (i in 1:10) {
   slopes <- c()
   p_vals <- c()
   
-  for (bin in levels(dfl$Bin)) {
-    trend_tests[[bin]] <- trend::mk.test(dfl[which(dfl$Bin == bin),]$value)
-    mod <- lm(value ~ Year, data = dfl[which(dfl$Bin == bin),])
+  for (bin in levels(dfl$Bins)) {
+    trend_tests[[bin]] <- trend::mk.test(dfl[which(dfl$Bins == bin),]$Percentage)
+    mod <- lm(Percentage ~ Year, data = dfl[which(dfl$Bins == bin),])
     slope <- coefficients(mod)[2]
     slopes <- c(slopes, slope)
     p_vals <- c(p_vals, trend_tests[[bin]]$p.val)
   }
   
-  slopes_df <- rbind(
-    slopes_df,
+  trends_df <- rbind(
+    trends_df,
     data.frame(
       Biome = rep(biome_name, length(slopes)),
-      Bin = as.numeric(dfl$Bin),
+      Bin = as.character(dfl$Bins),
       Slope = slopes,
       p_val = p_vals,
       Signif = ifelse(p_vals >= 0.1, 1, ifelse(p_vals >= 0.05, 2, 3))
-    )
+    ) %>%
+      dplyr::mutate(
+        row = as.integer(stringr::str_sub(Bin, 1, 1)),
+        col = as.integer(stringr::str_sub(Bin, 2, 2))
+      )
   )
 }
 
-slopes_df$Biome <- factor(slopes_df$Biome, levels = biome_names)
-slopes_df$Signif <- factor(
-  slopes_df$Signif, levels = c(1, 2, 3), labels = c(">=.1", ">=.5", "<.5")
+trends_df$Biome <- factor(trends_df$Biome, levels = biome_names)
+trends_df$Signif <- factor(
+  trends_df$Signif, levels = c(1, 2, 3), labels = c(">=.1", ">=.5", "<.5")
   )
 
-ggplot2::ggplot(
-  data = slopes_df,
-  ggplot2::aes(
-    x = Bin, y = Slope * 100,
-    shape = Signif, colour = Signif
-    )
-) +
-  ggplot2::geom_point(size = 2) +
-  ggplot2::scale_color_manual(
-    name = "M-K Test\np-value",
-    values = c(
-      ">=.1" = scales::alpha(rgb(0, 70, 140, maxColorValue = 255), 0.3),
-      ">=.5" = scales::alpha(rgb(0, 60, 120, maxColorValue = 255), 0.7),
-      "<.5" = scales::alpha(rgb(0, 102, 102, maxColorValue = 255), 1)
-      )
+gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
+  ggplot2::geom_tile(color = "grey70") +
+  ggplot2::scale_fill_viridis_c(option = "magma", direction = -1) +
+  ggplot2::coord_equal() +
+  #ggplot2::scale_y_reverse() +
+  ggplot2::facet_wrap(~ Biome) +
+  ggplot2::labs(
+    x = "SWB bin",
+    y = expression("T"["as,"~"mean"]~"bin"),
+    fill = "p value"
     ) +
-  ggplot2::scale_shape_manual(
-    name = "M-K Test\np-value",
-    values = c(
-      ">=.1" = 17,
-      ">=.5" = 15,
-      "<.5" = 19
-      )
-    ) +
-  ggplot2::facet_wrap(Biome ~ ., scales = "free_y") +
-  ggplot2::ylab("Slope in percentage of burned pixels") +
   ggplot2::theme_bw()

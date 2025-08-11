@@ -213,6 +213,9 @@ for (bin0 in mat0[, 3]) {
     fdat <- as.data.frame(ftab)
     fdat$Bin0 <- bin0
     fdat$Bin1 <- bin1
+    fdat$Year <- as.numeric(
+      sub("Fire_", "", tools::file_path_sans_ext(basename(f_fire)))
+    )
     
     if (is.null(df_out)) {
       df_out <- fdat
