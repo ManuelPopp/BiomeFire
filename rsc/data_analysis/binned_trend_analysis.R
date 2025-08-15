@@ -66,6 +66,7 @@ for (i in 1:length(files)) {
   trend_tests <- list()
   slopes <- c()
   p_vals <- c()
+  means <- c()
   
   for (bin in levels(dfl$Bins)) {
     trend_tests[[bin]] <- trend::mk.test(dfl[which(dfl$Bins == bin),]$Percentage)
@@ -73,6 +74,7 @@ for (i in 1:length(files)) {
     slope <- coefficients(mod)[2]
     slopes <- c(slopes, slope)
     p_vals <- c(p_vals, trend_tests[[bin]]$p.val)
+    means <- c(means, mean(dfl[which(dfl$Bins == bin),]$Percentage))
   }
   
   trends_df <- rbind(
@@ -82,7 +84,8 @@ for (i in 1:length(files)) {
       Bin = as.character(dfl$Bins),
       Slope = slopes,
       p_val = p_vals,
-      Signif = ifelse(p_vals >= 0.1, 1, ifelse(p_vals >= 0.05, 2, 3))
+      Signif = ifelse(p_vals >= 0.1, 1, ifelse(p_vals >= 0.05, 2, 3)),
+      Mean = means
     ) %>%
       dplyr::mutate(
         row = as.integer(stringr::str_sub(Bin, 1, 1)),
@@ -98,7 +101,7 @@ trends_df$Signif <- factor(
 
 gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
   ggplot2::geom_tile(color = "grey70") +
-  ggplot2::scale_fill_viridis_c(option = "magma", direction = -1) +
+  ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
   ggplot2::coord_equal() +
   #ggplot2::scale_y_reverse() +
   ggplot2::facet_wrap(~ Biome) +
@@ -107,4 +110,30 @@ gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
     y = expression("T"["as,"~"mean"]~"bin"),
     fill = "p value"
     ) +
+  ggplot2::theme_bw()
+
+gg_effectsize <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Slope)) +
+  ggplot2::geom_tile(color = "grey70") +
+  ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
+  ggplot2::coord_equal() +
+  #ggplot2::scale_y_reverse() +
+  ggplot2::facet_wrap(~ Biome) +
+  ggplot2::labs(
+    x = "SWB bin",
+    y = expression("T"["as,"~"mean"]~"bin"),
+    fill = "Effect size"
+  ) +
+  ggplot2::theme_bw()
+
+gg_mean_burned <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Mean)) +
+  ggplot2::geom_tile(color = "grey70") +
+  ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
+  ggplot2::coord_equal() +
+  #ggplot2::scale_y_reverse() +
+  ggplot2::facet_wrap(~ Biome) +
+  ggplot2::labs(
+    x = "SWB bin",
+    y = expression("T"["as,"~"mean"]~"bin"),
+    fill = "Mean annual\nburned area [%]"
+  ) +
   ggplot2::theme_bw()
