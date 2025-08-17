@@ -173,12 +173,16 @@ p0 <- terra::global(
   predictor_0,
   fun = quantile,
   probs = seq(0, 1, quantile_step), na.rm = TRUE
-  )[1, ]
-print(p0)
-print(p0 %>% t())
+  )[1, ] %>%
+  as.vector()
+
 p0[1] <- p0[1] - 1
-p0[length(seq(0, 1, quantile_step))] <- p0[length(seq(0, 1, quantile_step))] + 1
-mat0 <- cbind(p0[-length(p0)], p0[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
+p0[length(p0)] <- p0[length(p0)] + 1
+mat0 <- cbind(
+  p0[-length(p0)],
+  p0[-1],
+  seq(1, (length(p0) - 1))
+)
 
 predictor_0_binned <- terra::classify(predictor_0, mat0)
 
@@ -186,10 +190,16 @@ p1 <- terra::global(
   predictor_1,
   fun = quantile,
   probs = seq(0, 1, quantile_step), na.rm = TRUE
-)[1, ] %>% as.vector() %>% unname()
+)[1, ] %>%
+  as.vector()
+
 p1[1] <- p1[1] - 1
-p1[length(seq(0, 1, quantile_step))] <- p1[length(seq(0, 1, quantile_step))] + 1
-mat1 <- cbind(p1[-length(p1)], p1[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
+p1[length(p1)] <- p1[length(p1)] + 1
+mat1 <- cbind(
+  p1[-length(p1)],
+  p1[-1],
+  seq(1, (length(p1) - 1))
+)
 
 predictor_1_binned <- terra::classify(predictor_1, mat1)
 
