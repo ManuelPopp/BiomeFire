@@ -178,11 +178,7 @@ p0 <- terra::global(
 
 p0[1] <- p0[1] - 1
 p0[length(p0)] <- p0[length(p0)] + 1
-mat0 <- cbind(
-  p0[-length(p0)],
-  p0[-1],
-  seq(1, (length(p0) - 1))
-)
+mat0 <- t(p0) %>% unname()
 print(mat0)
 
 predictor_0_binned <- terra::classify(predictor_0, rcl = mat0)
@@ -196,11 +192,7 @@ p1 <- terra::global(
 
 p1[1] <- p1[1] - 1
 p1[length(p1)] <- p1[length(p1)] + 1
-mat1 <- cbind(
-  p1[-length(p1)],
-  p1[-1],
-  seq(1, (length(p1) - 1))
-)
+mat1 <- t(p1) %>% unname()
 
 predictor_1_binned <- terra::classify(predictor_1, rcl = mat1)
 
