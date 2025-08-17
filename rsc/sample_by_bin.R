@@ -173,7 +173,9 @@ p0 <- terra::global(
   predictor_0,
   fun = quantile,
   probs = seq(0, 1, quantile_step), na.rm = TRUE
-  )[1, ] %>% as.vector() %>% unname()
+  )[1, ]
+print(p0)
+print(p0 %>% t())
 p0[1] <- p0[1] - 1
 p0[length(seq(0, 1, quantile_step))] <- p0[length(seq(0, 1, quantile_step))] + 1
 mat0 <- cbind(p0[-length(p0)], p0[-1], 1:(length(seq(0, 1, quantile_step)) - 1))
