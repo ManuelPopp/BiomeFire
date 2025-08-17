@@ -183,8 +183,9 @@ mat0 <- cbind(
   p0[-1],
   seq(1, (length(p0) - 1))
 )
+print(mat0)
 
-predictor_0_binned <- terra::classify(predictor_0, mat0)
+predictor_0_binned <- terra::classify(predictor_0, rcl = mat0)
 
 p1 <- terra::global(
   predictor_1,
@@ -201,7 +202,7 @@ mat1 <- cbind(
   seq(1, (length(p1) - 1))
 )
 
-predictor_1_binned <- terra::classify(predictor_1, mat1)
+predictor_1_binned <- terra::classify(predictor_1, rcl = mat1)
 
 df_out <- NULL
 for (bin0 in mat0[, 3]) {
