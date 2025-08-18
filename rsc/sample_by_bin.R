@@ -56,6 +56,14 @@ files <- function(directories, year, ...) {
   return(do.call(c, lapply(directories, FUN = dfiles, year = year, ...)))
 }
 
+freq_tab <- function(r) {
+  f <- as.data.frame(terra::freq(r, useNA = "no"))
+  all_vals <- data.frame(value = c(0, 1))
+  f2 <- merge(all_vals, f, by = "value", all.x = TRUE)
+  f2$count[is.na(f2$count)] <- 0
+  return(f2)
+}
+
 #>----------------------------------------------------------------------------<|
 #> Settings
 args <- commandArgs(trailingOnly = TRUE)
@@ -104,7 +112,7 @@ chelsa_climate_1 <- file.path(
   )
 
 # Response
-f_fire <- list.files(dir_fire, pattern = ".tif", full.names = TRUE)
+f_fire <- list.files(dir_fire, pattern = ".tif", full.names = TRUE)[-1]
 
 f_biome <- file.path(dir_lud, "biomes", paste0(biome_name, ".tif"))
 
@@ -217,13 +225,20 @@ for (bin0 in 1:length(as.vector(mat0))) {
     fire_masked <- fire_cropped %>%
       terra::mask(pred_mask_combined, maskvalue = NA, updatevalue = NA)
     
+    res <- lapply(
+      1:terra::nlyr(fire_masked), function(i) freq_tab(fire_masked[[i]])
+      )
+    print(res)
     ftab <- terra::freq(fire_masked)
     names(ftab) <- c("Year", "Fire", "Count")
     fdat <- as.data.frame(ftab)
     fdat$Bin0 <- bin0
     fdat$Bin1 <- bin1
-    fdat$Year <- as.numeric(
-      sub("Fire_", "", tools::file_path_sans_ext(basename(f_fire)))
+    fdat$Year <- rep(
+      as.numeric(
+        sub("Fire_", "", tools::file_path_sans_ext(basename(f_fire)))
+      ),
+      each = 2
     )
     
     if (is.null(df_out)) {
