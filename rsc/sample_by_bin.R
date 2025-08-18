@@ -200,13 +200,13 @@ df_out <- NULL
 for (bin0 in 1:length(as.vector(mat0))) {
   # Create combined mask
   print(
-    paste("Creating predictor mask outer bin", bin0, "of", length(mat0[, 3]))
+    paste("Creating predictor mask outer bin", bin0, "of", length(mat0))
     )
   pred_mask_0 <- (predictor_0_binned == bin0) %>%
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
   
   for (bin1 in 1:length(as.vector(mat1))) {
-    print(paste("Sub-bin", bin1, "of", length(mat1[, 3])))
+    print(paste("Sub-bin", bin1, "of", length(mat1)))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
       terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
     
