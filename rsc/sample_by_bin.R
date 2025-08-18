@@ -57,7 +57,7 @@ files <- function(directories, year, ...) {
 }
 
 freq_tab <- function(r) {
-  f <- as.data.frame(terra::freq(r, useNA = "no"))
+  f <- as.data.frame(terra::freq(r))
   all_vals <- data.frame(value = c(0, 1))
   f2 <- merge(all_vals, f, by = "value", all.x = TRUE)
   f2$count[is.na(f2$count)] <- 0
