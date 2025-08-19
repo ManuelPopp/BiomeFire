@@ -111,6 +111,7 @@ gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
     fill = "p value"
     ) +
   ggplot2::theme_bw()
+gg_mk_p_val
 
 gg_effectsize <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Slope)) +
   ggplot2::geom_tile(color = "grey70") +

@@ -80,7 +80,7 @@ n_bin <- floor(1 / quantile_step)
 if (length(args) > 0) {
   biome_name <- paste0("Olson_biome_", as.character(args[1]))
 } else {
-  biome_name <- "Olson_biome_4"
+  biome_name <- "Olson_biome_3"
 }
 
 if (Sys.info()["sysname"] == "Windows") {
@@ -182,11 +182,19 @@ p0 <- terra::global(
   fun = quantile,
   probs = seq(0, 1, quantile_step), na.rm = TRUE
   )[1, ] %>%
+  unname() %>%
+  t() %>%
+  unname() %>%
   as.vector()
 
 p0[1] <- p0[1] - 1
 p0[length(p0)] <- p0[length(p0)] + 1
-mat0 <- t(p0) %>% unname()
+mat0 <- cbind(
+  p0[1:(length(p0) - 1)],
+  p0[2:length(p0)],
+  seq(1, (length(p0) - 1))
+  )
+cat("Reclassification matrix for variable 0:\n")
 print(mat0)
 
 predictor_0_binned <- terra::classify(predictor_0, rcl = mat0)
@@ -196,16 +204,25 @@ p1 <- terra::global(
   fun = quantile,
   probs = seq(0, 1, quantile_step), na.rm = TRUE
 )[1, ] %>%
+  unname() %>%
+  t() %>%
+  unname() %>%
   as.vector()
 
 p1[1] <- p1[1] - 1
 p1[length(p1)] <- p1[length(p1)] + 1
-mat1 <- t(p1) %>% unname()
+mat1 <- cbind(
+  p1[1:(length(p1) - 1)],
+  p1[2:length(p1)],
+  seq(1, (length(p1) - 1))
+  )
+cat("Reclassification matrix for variable 1:\n")
+print(mat1)
 
 predictor_1_binned <- terra::classify(predictor_1, rcl = mat1)
 
 df_out <- NULL
-for (bin0 in 1:length(as.vector(mat0))) {
+for (bin0 in 1:NROW(mat0)) {
   # Create combined mask
   print(
     paste("Creating predictor mask outer bin", bin0, "of", length(mat0))
@@ -213,7 +230,7 @@ for (bin0 in 1:length(as.vector(mat0))) {
   pred_mask_0 <- (predictor_0_binned == bin0) %>%
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
   
-  for (bin1 in 1:length(as.vector(mat1))) {
+  for (bin1 in 1:NROW(mat1)) {
     print(paste("Sub-bin", bin1, "of", length(mat1)))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
       terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
