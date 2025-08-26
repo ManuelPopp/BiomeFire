@@ -194,7 +194,7 @@ extent <- terra::crop(pft, biome_extent) %>%
 # Crop layers
 print("Cropping layers...")
 fire_cropped <- terra::crop(fire, extent) %>%
-  terra::project("epsg:54009")
+  terra::project("epsg:54009", method = "near")
 biome_cropped <- terra::crop(biome, extent)
 pft_cropped <- terra::crop(pft, extent)
 
@@ -208,11 +208,11 @@ print("Loading predictor...")
 predictor_0 <- terra::rast(chelsa_climate_0) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined) %>%
-  terra::project("epsg:54009")
+  terra::project("epsg:54009", method = "near")
 predictor_1 <- terra::rast(chelsa_climate_1) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined) %>%
-  terra::project("epsg:54009")
+  terra::project("epsg:54009", method = "near")
 
 p0 <- terra::global(
   predictor_0,
