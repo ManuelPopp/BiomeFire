@@ -81,7 +81,7 @@ for (i in 1:length(files)) {
     trends_df,
     data.frame(
       Biome = rep(biome_name, length(slopes)),
-      Bin = as.character(dfl$Bins),
+      Bin = as.character(levels(dfl$Bins)),
       Slope = slopes,
       p_val = p_vals,
       Signif = ifelse(p_vals >= 0.1, 1, ifelse(p_vals >= 0.05, 2, 3)),
@@ -96,7 +96,7 @@ for (i in 1:length(files)) {
 
 trends_df$Biome <- factor(trends_df$Biome, levels = biome_names)
 trends_df$Signif <- factor(
-  trends_df$Signif, levels = c(1, 2, 3), labels = c(">=.1", ">=.5", "<.5")
+  trends_df$Signif, levels = c(1, 2, 3), labels = c("", "*", "**")
   )
 
 gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
@@ -113,11 +113,24 @@ gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
   ggplot2::theme_bw()
 gg_mk_p_val
 
-gg_effectsize <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Slope)) +
-  ggplot2::geom_tile(color = "grey70") +
-  ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
+gg_effectsize <- ggplot2::ggplot(
+  trends_df, aes(x = col, y = row, fill = Slope)
+  ) +
+  ggplot2::geom_tile(colour = "grey50") +
+  ggplot2::geom_text(ggplot2::aes(label = Signif), color = "black", size = 5) +
+  ggplot2::scale_fill_viridis_c(
+    option = "turbo", direction = 1, limits = c(-0.3, 0.3)
+    ) +
   ggplot2::coord_equal() +
   #ggplot2::scale_y_reverse() +
+  ggplot2::scale_alpha_continuous(range = c(1, 0), limits = c(0, 0.5)) +
+  ggplot2::scale_colour_manual(
+    values = c(
+      grDevices::rgb(1, 1, 1, 0.25),
+      grDevices::rgb(0.5, 0.5, 0.5, 0.5),
+      grDevices::rgb(0, 0, 0, 1)
+      )
+    ) +
   ggplot2::facet_wrap(~ Biome) +
   ggplot2::labs(
     x = "SWB bin",
@@ -125,10 +138,11 @@ gg_effectsize <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Slope))
     fill = "Effect size"
   ) +
   ggplot2::theme_bw()
+gg_effectsize
 
 gg_mean_burned <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Mean)) +
   ggplot2::geom_tile(color = "grey70") +
-  ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
+  ggplot2::scale_fill_viridis_c(option = "turbo", direction = 1) +
   ggplot2::coord_equal() +
   #ggplot2::scale_y_reverse() +
   ggplot2::facet_wrap(~ Biome) +
@@ -138,3 +152,23 @@ gg_mean_burned <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Mean))
     fill = "Mean annual\nburned area [%]"
   ) +
   ggplot2::theme_bw()
+
+# Independent plots
+library(patchwork)
+plots <- trends_df %>%
+  split(.$Biome) %>%
+  lapply(function(df) {
+    ggplot2::ggplot(df, aes(x = col, y = row, fill = Slope)) +
+      ggplot2::geom_tile(color = "grey70") +
+      ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
+      ggplot2::coord_equal(xlim = c(1, 5), ylim = c(1, 5), expand = FALSE) +
+      ggplot2::labs(
+        x = "SWB bin",
+        y = expression("T"["as,"~"mean"]~"bin"),
+        fill = "Effect size"
+      ) +
+      ggplot2::theme_bw() +
+      ggplot2::ggtitle(unique(df$Biome))
+  })
+
+wrap_plots(plots)

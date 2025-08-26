@@ -64,6 +64,39 @@ freq_tab <- function(r) {
   return(f2)
 }
 
+collapse_bins <- function(r) {
+  stopifnot(inherits(r, "SpatRaster"))
+  m <- terra::values(r, mat = TRUE)
+  nr <- nrow(m)
+  nc <- ncol(m)
+  
+  row_bins <- split(1:nr, cut(1:nr, 6, labels = FALSE))
+  col_bins <- split(1:nc, cut(1:nc, 6, labels = FALSE))
+  
+  keep_rows <- vapply(
+    row_bins, function(idx) {
+      any(!is.na(m[idx, , drop = FALSE]))
+      },
+    logical(1)
+    )
+  
+  keep_cols <- vapply(
+    col_bins,
+    function(idx) {
+      any(!is.na(m[ , idx, drop = FALSE]))
+      },
+    logical(1)
+    )
+  
+  kept_row_idx <- unlist(row_bins[keep_rows])
+  kept_col_idx <- unlist(col_bins[keep_cols])
+  m_new <- m[kept_row_idx, kept_col_idx, drop = FALSE]
+  r_new <- terra::rast(nrows = nrow(m_new), ncols = ncol(m_new))
+  values(r_new) <- as.vector(m_new)
+  
+  return(r_new)
+}
+
 #>----------------------------------------------------------------------------<|
 #> Settings
 args <- commandArgs(trailingOnly = TRUE)
@@ -160,9 +193,11 @@ extent <- terra::crop(pft, biome_extent) %>%
 
 # Crop layers
 print("Cropping layers...")
-fire_cropped <- terra::crop(fire, extent)
+fire_cropped <- terra::crop(fire, extent) %>%
+  terra::project("epsg:54009")
 biome_cropped <- terra::crop(biome, extent)
 pft_cropped <- terra::crop(pft, extent)
+
 mask_combined <- c(biome_cropped, pft_cropped) %>%
   terra::app(fun = "anyNA") %>%
   terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
@@ -172,10 +207,12 @@ mask_combined <- c(biome_cropped, pft_cropped) %>%
 print("Loading predictor...")
 predictor_0 <- terra::rast(chelsa_climate_0) %>%
   terra::crop(extent) %>%
-  terra::mask(mask_combined)
+  terra::mask(mask_combined) %>%
+  terra::project("epsg:54009")
 predictor_1 <- terra::rast(chelsa_climate_1) %>%
   terra::crop(extent) %>%
-  terra::mask(mask_combined)
+  terra::mask(mask_combined) %>%
+  terra::project("epsg:54009")
 
 p0 <- terra::global(
   predictor_0,
