@@ -40,7 +40,7 @@ import <- function(...) {
 }
 
 import(
-  "terra", "dplyr", "tidyterra", "tidyr", "parallel",
+  "terra", "fasterRaster", "dplyr", "tidyterra", "tidyr", "parallel",
   dependencies = TRUE
 )
 
@@ -214,7 +214,7 @@ predictor_1 <- terra::rast(chelsa_climate_1) %>%
   terra::mask(mask_combined) %>%
   terra::project("epsg:8857", method = "near")
 
-p0 <- terra::global(
+p0 <- fasterRaster::global(
   predictor_0,
   fun = "quantile",
   probs = seq(0, 1, quantile_step), na.rm = TRUE
@@ -236,7 +236,7 @@ print(mat0)
 
 predictor_0_binned <- terra::classify(predictor_0, rcl = mat0)
 
-p1 <- terra::global(
+p1 <- fasterRaster::global(
   predictor_1,
   fun = "quantile",
   probs = seq(0, 1, quantile_step), na.rm = TRUE

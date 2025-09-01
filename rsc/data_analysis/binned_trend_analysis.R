@@ -4,6 +4,7 @@ require("trend")
 require("scales")
 
 dir <- "L:/poppman/data/bff/dat/lud11/climate_bin_data_tasmean_swb_5"
+dir_fig <- "D:/onedrive/OneDrive - Eidg. Forschungsanstalt WSL/switchdrive/PhD/prj/bff/fig"
 files <- list.files(dir, pattern = ".Rsave", full.names = TRUE)
 i <- 10
 
@@ -140,7 +141,7 @@ gg_effectsize <- ggplot2::ggplot(
 gg_effectsize
 
 gg_mean_burned <- ggplot2::ggplot(
-  trends_df, aes(x = col, y = row, fill = log(Mean))
+  trends_df, aes(x = col, y = row, fill = log10(Mean))
   ) +
   ggplot2::geom_tile(color = "grey70") +
   ggplot2::scale_fill_viridis_c(option = "turbo", direction = 1) +
@@ -153,23 +154,38 @@ gg_mean_burned <- ggplot2::ggplot(
     fill = "Log mean annual\nburned area [%]"
   ) +
   ggplot2::theme_bw()
+gg_mean_burned
+
+ggplot2::ggsave(
+  filename = file.path(dir_fig, "Binned_trend.svg"),
+  plot = gg_effectsize,
+  width = 9,
+  height = 6
+  )
+
+ggplot2::ggsave(
+  filename = file.path(dir_fig, "Binned_intercept.svg"),
+  plot = gg_mean_burned,
+  width = 9,
+  height = 6
+)
 
 # Independent plots
-library(patchwork)
-plots <- trends_df %>%
-  split(.$Biome) %>%
-  lapply(function(df) {
-    ggplot2::ggplot(df, aes(x = col, y = row, fill = Slope)) +
-      ggplot2::geom_tile(color = "grey70") +
-      ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
-      ggplot2::coord_equal(xlim = c(1, 5), ylim = c(1, 5), expand = FALSE) +
-      ggplot2::labs(
-        x = "SWB bin",
-        y = expression("T"["as,"~"mean"]~"bin"),
-        fill = "Effect size"
-      ) +
-      ggplot2::theme_bw() +
-      ggplot2::ggtitle(unique(df$Biome))
-  })
-
-wrap_plots(plots)
+# library(patchwork)
+# plots <- trends_df %>%
+#   split(.$Biome) %>%
+#   lapply(function(df) {
+#     ggplot2::ggplot(df, aes(x = col, y = row, fill = Slope)) +
+#       ggplot2::geom_tile(color = "grey70") +
+#       ggplot2::scale_fill_viridis_c(option = "inferno", direction = -1) +
+#       ggplot2::coord_equal(xlim = c(1, 5), ylim = c(1, 5), expand = FALSE) +
+#       ggplot2::labs(
+#         x = "SWB bin",
+#         y = expression("T"["as,"~"mean"]~"bin"),
+#         fill = "Effect size"
+#       ) +
+#       ggplot2::theme_bw() +
+#       ggplot2::ggtitle(unique(df$Biome))
+#   })
+# 
+# patchwork::wrap_plots(plots)
