@@ -111,7 +111,6 @@ gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
     fill = "p value"
     ) +
   ggplot2::theme_bw()
-gg_mk_p_val
 
 gg_effectsize <- ggplot2::ggplot(
   trends_df, aes(x = col, y = row, fill = Slope)
@@ -140,7 +139,9 @@ gg_effectsize <- ggplot2::ggplot(
   ggplot2::theme_bw()
 gg_effectsize
 
-gg_mean_burned <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Mean)) +
+gg_mean_burned <- ggplot2::ggplot(
+  trends_df, aes(x = col, y = row, fill = log(Mean))
+  ) +
   ggplot2::geom_tile(color = "grey70") +
   ggplot2::scale_fill_viridis_c(option = "turbo", direction = 1) +
   ggplot2::coord_equal() +
@@ -149,7 +150,7 @@ gg_mean_burned <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = Mean))
   ggplot2::labs(
     x = "SWB bin",
     y = expression("T"["as,"~"mean"]~"bin"),
-    fill = "Mean annual\nburned area [%]"
+    fill = "Log mean annual\nburned area [%]"
   ) +
   ggplot2::theme_bw()
 

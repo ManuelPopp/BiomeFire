@@ -216,7 +216,7 @@ predictor_1 <- terra::rast(chelsa_climate_1) %>%
 
 p0 <- terra::global(
   predictor_0,
-  fun = quantile,
+  fun = "quantile",
   probs = seq(0, 1, quantile_step), na.rm = TRUE
   )[1, ] %>%
   unname() %>%
@@ -238,7 +238,7 @@ predictor_0_binned <- terra::classify(predictor_0, rcl = mat0)
 
 p1 <- terra::global(
   predictor_1,
-  fun = quantile,
+  fun = "quantile",
   probs = seq(0, 1, quantile_step), na.rm = TRUE
 )[1, ] %>%
   unname() %>%
