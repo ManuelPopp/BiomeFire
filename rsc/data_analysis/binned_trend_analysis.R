@@ -2,6 +2,7 @@ require("ggplot2")
 require("tidyr")
 require("trend")
 require("scales")
+require("viridisLite")
 
 dir <- "L:/poppman/data/bff/dat/lud11/climate_bin_data_tasmean_swb_5"
 dir_fig <- "D:/onedrive/OneDrive - Eidg. Forschungsanstalt WSL/switchdrive/PhD/prj/bff/fig"
@@ -113,23 +114,31 @@ gg_mk_p_val <- ggplot2::ggplot(trends_df, aes(x = col, y = row, fill = p_val)) +
     ) +
   ggplot2::theme_bw()
 
+# Trends
+cols = c(
+  grDevices::rgb(0.2, 0, 0),
+  "firebrick4",
+  "firebrick1",
+  "white",
+  "steelblue1",
+  "steelblue4",
+  "navyblue"
+)
+vals = seq(0, 1, length.out = length(cols))
+white_turbo = scales::gradient_n_pal(rev(cols), vals)
 gg_effectsize <- ggplot2::ggplot(
   trends_df, aes(x = col, y = row, fill = Slope)
   ) +
   ggplot2::geom_tile(colour = "grey50") +
-  ggplot2::geom_text(ggplot2::aes(label = Signif), color = "black", size = 5) +
-  ggplot2::scale_fill_viridis_c(
-    option = "turbo", direction = 1, limits = c(-0.3, 0.3)
-    ) +
+  ggplot2::geom_text(ggplot2::aes(label = Signif, colour = abs(Slope) > 0.1), size = 5) +
+  ggplot2::scale_fill_gradientn(
+    colours = white_turbo(seq(0, 1, length.out = 512)), limits = c(-0.3, 0.3)
+  ) +
   ggplot2::coord_equal() +
   #ggplot2::scale_y_reverse() +
   ggplot2::scale_alpha_continuous(range = c(1, 0), limits = c(0, 0.5)) +
   ggplot2::scale_colour_manual(
-    values = c(
-      grDevices::rgb(1, 1, 1, 0.25),
-      grDevices::rgb(0.5, 0.5, 0.5, 0.5),
-      grDevices::rgb(0, 0, 0, 1)
-      )
+    values = c("black", "white"), guide = "none"
     ) +
   ggplot2::facet_wrap(~ Biome) +
   ggplot2::labs(
@@ -140,11 +149,23 @@ gg_effectsize <- ggplot2::ggplot(
   ggplot2::theme_bw()
 gg_effectsize
 
+# Mean burned colour scale
+cols = c(
+  "black",
+  "purple4",
+  viridisLite::viridis(6)[-c(1)],
+  "khaki1",
+  "lightgoldenrodyellow"
+  )
+vals = seq(0, 1, length.out = length(cols))
+long_viridis = scales::gradient_n_pal(rev(cols), vals)
 gg_mean_burned <- ggplot2::ggplot(
   trends_df, aes(x = col, y = row, fill = log10(Mean))
   ) +
   ggplot2::geom_tile(color = "grey70") +
-  ggplot2::scale_fill_viridis_c(option = "turbo", direction = 1) +
+  ggplot2::scale_fill_gradientn(
+    colours = long_viridis(seq(0, 1, length.out = 512))
+    ) +
   ggplot2::coord_equal() +
   #ggplot2::scale_y_reverse() +
   ggplot2::facet_wrap(~ Biome) +
