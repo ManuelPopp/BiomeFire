@@ -183,7 +183,7 @@ pft <- terra::rast(f_pft)
 biome <- terra::rast(f_biome)
 
 # Get biome extent and sampling area extent
-print("Get study extent...")
+print("\nGet study extent...")
 biome_extent <- terra::trim(biome) %>%
   terra::ext()
 
@@ -192,27 +192,40 @@ extent <- terra::crop(pft, biome_extent) %>%
   terra::ext()
 
 # Crop layers
-print("Cropping layers...")
+print("\nCropping layers...")
 fire_cropped <- terra::crop(fire, extent) %>%
   terra::project("epsg:8857", method = "near")
 biome_cropped <- terra::crop(biome, extent)
 pft_cropped <- terra::crop(pft, extent)
 
+print("\nCombining mask layers...")
 mask_combined <- c(biome_cropped, pft_cropped) %>%
   terra::app(fun = "anyNA") %>%
-  terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
+  terra::classify(
+    rcl = matrix(c(0, 1, 0, NA), ncol = 2),
+    filename = file.path(tempdir(), "mask_combined.tif"),
+    overwrite = TRUE
+    )
 
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
-print("Loading predictor...")
+print("\nLoading predictor...")
 predictor_0 <- terra::rast(chelsa_climate_0) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined) %>%
-  terra::project("epsg:8857", method = "near")
+  terra::project(
+    "epsg:8857", method = "near",
+    filename = file.path(tempdir(), "pred_0_equal_area.tif"),
+    overwrite = TRUE
+    )
 predictor_1 <- terra::rast(chelsa_climate_1) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined) %>%
-  terra::project("epsg:8857", method = "near")
+  terra::project(
+    "epsg:8857", method = "near",
+    filename = file.path(tempdir(), "pred_1_equal_area.tif"),
+    overwrite = TRUE
+    )
 
 p0 <- raster::quantile(
   raster::raster(predictor_0),
@@ -231,7 +244,7 @@ mat0 <- cbind(
   p0[2:length(p0)],
   seq(1, (length(p0) - 1))
   )
-cat("Reclassification matrix for variable 0:\n")
+cat("\nReclassification matrix for variable 0:\n")
 print(mat0)
 
 predictor_0_binned <- terra::classify(predictor_0, rcl = mat0)
@@ -253,7 +266,7 @@ mat1 <- cbind(
   p1[2:length(p1)],
   seq(1, (length(p1) - 1))
   )
-cat("Reclassification matrix for variable 1:\n")
+cat("\nReclassification matrix for variable 1:\n")
 print(mat1)
 
 predictor_1_binned <- terra::classify(predictor_1, rcl = mat1)
@@ -262,13 +275,13 @@ df_out <- NULL
 for (bin0 in 1:NROW(mat0)) {
   # Create combined mask
   print(
-    paste("Creating predictor mask outer bin", bin0, "of", length(mat0))
+    paste("\nCreating predictor mask outer bin", bin0, "of", length(mat0))
     )
   pred_mask_0 <- (predictor_0_binned == bin0) %>%
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
   
   for (bin1 in 1:NROW(mat1)) {
-    print(paste("Sub-bin", bin1, "of", length(mat1)))
+    print(paste("\nSub-bin", bin1, "of", length(mat1)))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
       terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
     
@@ -324,3 +337,7 @@ for (bin0 in 1:NROW(mat0)) {
   rm(pred_mask_0)
   gc()
 }
+
+unlink(file.path(tempdir(), "mask_classified.tif"))
+unlink(file.path(tempdir(), "pred_0_equal_area.tif"))
+unlink(file.path(tempdir(), "pred_1_equal_area.tif"))
