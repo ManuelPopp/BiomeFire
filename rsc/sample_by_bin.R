@@ -176,6 +176,8 @@ f_pft <- file.path(
   dir_lud, "masks", pft_maskfile
 )
 
+terra::gdalCache(size = 32768)
+
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
 fire <- terra::rast(f_fire)
@@ -199,13 +201,18 @@ biome_cropped <- terra::crop(biome, extent)
 pft_cropped <- terra::crop(pft, extent)
 
 print("\nCombining mask layers...")
-mask_combined <- c(biome_cropped, pft_cropped) %>%
-  terra::app(fun = "anyNA") %>%
-  terra::classify(
-    rcl = matrix(c(0, 1, 0, NA), ncol = 2),
-    filename = file.path(tempdir(), "mask_combined.tif"),
-    overwrite = TRUE
-    )
+mask_combined_rw <- c(biome_cropped, pft_cropped) %>%
+  terra::app(fun = "anyNA")
+
+print("\nReclassifying mask...")
+mask_combined <- terra::classify(
+  mask_combined_rw,
+  rcl = matrix(c(0, 1, 0, NA), ncol = 2),
+  filename = file.path(tempdir(), "mask_combined.tif"),
+  overwrite = TRUE
+  )
+rm(mask_combined_rw)
+gc()
 
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
