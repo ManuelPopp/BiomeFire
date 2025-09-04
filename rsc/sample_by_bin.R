@@ -19,7 +19,7 @@ import <- function(...) {
   #' Import R packages. Install them if necessary.
   #' 
   #' @param ... any argument that can be passed to install.packages.
-  #' @details The function installs only htoppackages that are missing. Packages
+  #' @details The function installs only packages that are missing. Packages
   #' are loaded.
   #' @examples
   #' # Load packages
@@ -196,9 +196,27 @@ extent <- terra::crop(pft, biome_extent) %>%
 # Crop layers
 print("\nCropping layers...")
 fire_cropped <- terra::crop(fire, extent) %>%
-  terra::project("epsg:8857", method = "near")
-biome_cropped <- terra::crop(biome, extent)
-pft_cropped <- terra::crop(pft, extent)
+  terra::project(
+    "epsg:8857",
+    method = "near",
+    filename = file.path(tempdir(), "fire_cropped.tif"),
+    overwrite = TRUE
+    )
+biome_cropped <- terra::crop(
+  biome, extent,
+  filename = file.path(tempdir(), "biome_cropped.tif"),
+  overwrite = TRUE
+  )
+pft_cropped <- terra::crop(
+  pft, extent,
+  filename = file.path(tempdir(), "pft_cropped.tif"),
+  overwrite = TRUE
+  )
+
+rm(fire)
+rm(biome)
+rm(pft)
+gc()
 
 print("\nCombining mask layers...")
 mask_combined_rw <- c(biome_cropped, pft_cropped) %>%
@@ -235,7 +253,7 @@ predictor_1 <- terra::rast(chelsa_climate_1) %>%
     )
 
 p0 <- raster::quantile(
-  raster::raster(predictor_0),
+  raster::raster(file.path(tempdir(), "pred_0_equal_area.tif")),
   probs = seq(0, 1, quantile_step),
   na.rm = TRUE
   ) %>%
@@ -254,10 +272,15 @@ mat0 <- cbind(
 cat("\nReclassification matrix for variable 0:\n")
 print(mat0)
 
-predictor_0_binned <- terra::classify(predictor_0, rcl = mat0)
+predictor_0_binned <- terra::classify(
+  predictor_0,
+  rcl = mat0,
+  filename = file.path(tempdir(), "predictor_0_binned.tif"),
+  overwrite = TRUE
+  )
 
 p1 <- raster::quantile(
-  raster::raster(predictor_1),
+  raster::raster(file.path(tempdir(), "pred_1_equal_area.tif")),
   probs = seq(0, 1, quantile_step),
   na.rm = TRUE
 ) %>%
@@ -276,7 +299,12 @@ mat1 <- cbind(
 cat("\nReclassification matrix for variable 1:\n")
 print(mat1)
 
-predictor_1_binned <- terra::classify(predictor_1, rcl = mat1)
+predictor_1_binned <- terra::classify(
+  predictor_1,
+  rcl = mat1,
+  filename = file.path(tempdir(), "predictor_1_binned.tif"),
+  overwrite = TRUE
+  )
 
 df_out <- NULL
 for (bin0 in 1:NROW(mat0)) {
@@ -338,13 +366,21 @@ for (bin0 in 1:NROW(mat0)) {
     
     rm(fire_masked)
     rm(pred_mask_1)
+    terra::tmpFiles(remove = TRUE)
     gc()
   }
   
   rm(pred_mask_0)
+  terra::tmpFiles(remove = TRUE)
   gc()
 }
-
-unlink(file.path(tempdir(), "mask_classified.tif"))
+unlink(file.path(tempdir(), "fire_cropped.tif"))
+unlink(file.path(tempdir(), "biome_cropped.tif"))
+unlink(file.path(tempdir(), "pft_cropped.tif"))
+unlink(file.path(tempdir(), "mask_combined.tif"))
 unlink(file.path(tempdir(), "pred_0_equal_area.tif"))
 unlink(file.path(tempdir(), "pred_1_equal_area.tif"))
+unlink(file.path(tempdir(), "predictor_0_binned.tif"))
+unlink(file.path(tempdir(), "predictor_1_binned.tif"))
+terra::tmpFiles(remove = TRUE)
+gc()
