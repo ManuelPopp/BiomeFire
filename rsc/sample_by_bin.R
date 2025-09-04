@@ -10,7 +10,7 @@
 ##
 ## ---------------------------
 ##
-## Descripton: Sample fire and non-fire points from predictor raster layers
+## Description: Sample fire and non-fire points from predictor raster layers
 ##
 #>----------------------------------------------------------------------------<|
 #> Install/load packages
@@ -198,19 +198,13 @@ print("\nCropping layers...")
 fire_cropped <- terra::crop(fire, extent) %>%
   terra::project(
     "epsg:8857",
-    method = "near",
-    filename = file.path(tempdir(), "fire_cropped.tif"),
-    overwrite = TRUE
+    method = "near"
     )
 biome_cropped <- terra::crop(
-  biome, extent,
-  filename = file.path(tempdir(), "biome_cropped.tif"),
-  overwrite = TRUE
+  biome, extent
   )
 pft_cropped <- terra::crop(
-  pft, extent,
-  filename = file.path(tempdir(), "pft_cropped.tif"),
-  overwrite = TRUE
+  pft, extent
   )
 
 rm(fire)
@@ -221,6 +215,10 @@ gc()
 print("\nCombining mask layers...")
 mask_combined_rw <- c(biome_cropped, pft_cropped) %>%
   terra::app(fun = "anyNA")
+
+rm(biome_cropped)
+rm(pft_cropped)
+gc()
 
 print("\nReclassifying mask...")
 mask_combined <- terra::classify(
@@ -234,21 +232,13 @@ gc()
 
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
-print("\nLoading predictor...")
+print("\nLoading predictor 0...")
 predictor_0 <- terra::rast(chelsa_climate_0) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined) %>%
   terra::project(
     "epsg:8857", method = "near",
     filename = file.path(tempdir(), "pred_0_equal_area.tif"),
-    overwrite = TRUE
-    )
-predictor_1 <- terra::rast(chelsa_climate_1) %>%
-  terra::crop(extent) %>%
-  terra::mask(mask_combined) %>%
-  terra::project(
-    "epsg:8857", method = "near",
-    filename = file.path(tempdir(), "pred_1_equal_area.tif"),
     overwrite = TRUE
     )
 
@@ -279,6 +269,18 @@ predictor_0_binned <- terra::classify(
   overwrite = TRUE
   )
 
+unlink(file.path(tempdir(), "pred_0_equal_area.tif"))
+
+print("\nLoading predictor 1...")
+predictor_1 <- terra::rast(chelsa_climate_1) %>%
+  terra::crop(extent) %>%
+  terra::mask(mask_combined) %>%
+  terra::project(
+    "epsg:8857", method = "near",
+    filename = file.path(tempdir(), "pred_1_equal_area.tif"),
+    overwrite = TRUE
+  )
+
 p1 <- raster::quantile(
   raster::raster(file.path(tempdir(), "pred_1_equal_area.tif")),
   probs = seq(0, 1, quantile_step),
@@ -305,6 +307,8 @@ predictor_1_binned <- terra::classify(
   filename = file.path(tempdir(), "predictor_1_binned.tif"),
   overwrite = TRUE
   )
+
+unlink(file.path(tempdir(), "pred_1_equal_area.tif"))
 
 df_out <- NULL
 for (bin0 in 1:NROW(mat0)) {
@@ -378,8 +382,6 @@ unlink(file.path(tempdir(), "fire_cropped.tif"))
 unlink(file.path(tempdir(), "biome_cropped.tif"))
 unlink(file.path(tempdir(), "pft_cropped.tif"))
 unlink(file.path(tempdir(), "mask_combined.tif"))
-unlink(file.path(tempdir(), "pred_0_equal_area.tif"))
-unlink(file.path(tempdir(), "pred_1_equal_area.tif"))
 unlink(file.path(tempdir(), "predictor_0_binned.tif"))
 unlink(file.path(tempdir(), "predictor_1_binned.tif"))
 terra::tmpFiles(remove = TRUE)
