@@ -216,10 +216,6 @@ print("\nCombining mask layers...")
 mask_combined_rw <- c(biome_cropped, pft_cropped) %>%
   terra::app(fun = "anyNA")
 
-rm(biome_cropped)
-rm(pft_cropped)
-gc()
-
 print("\nReclassifying mask...")
 mask_combined <- terra::classify(
   mask_combined_rw,
@@ -227,7 +223,10 @@ mask_combined <- terra::classify(
   filename = file.path(tempdir(), "mask_combined.tif"),
   overwrite = TRUE
   )
+
 rm(mask_combined_rw)
+rm(biome_cropped)
+rm(pft_cropped)
 gc()
 
 #>----------------------------------------------------------------------------<|
