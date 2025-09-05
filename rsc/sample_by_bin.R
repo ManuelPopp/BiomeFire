@@ -40,7 +40,7 @@ import <- function(...) {
 }
 
 import(
-  "terra", "dplyr", "tidyterra", "tidyr", "parallel",
+  "terra", "dplyr", "tidyterra", "tidyr", "parallel", "fs",
   dependencies = TRUE
 )
 
@@ -178,6 +178,9 @@ f_pft <- file.path(
 
 terra::gdalCache(size = 32768)
 
+temp_dir <- file.path("/lud11/poppman/tmp", biome_name)
+dir.create(temp_dir, showWarnings = FALSE)
+
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
 fire <- terra::rast(f_fire)
@@ -214,13 +217,19 @@ gc()
 
 print("\nCombining mask layers...")
 mask_combined_rw <- c(biome_cropped, pft_cropped) %>%
-  terra::app(fun = "anyNA")
+  terra::app(
+    fun = "anyNA",
+    filename = file.path(temp_dir, "mask_comb.tif"),
+    datatype = "INT1U",
+    overwrite = TRUE
+    )
 
 print("\nReclassifying mask...")
 mask_combined <- terra::classify(
   mask_combined_rw,
   rcl = matrix(c(0, 1, 0, NA), ncol = 2),
-  filename = file.path(tempdir(), "mask_combined.tif"),
+  filename = file.path(temp_dir, "mask_combined.tif"),
+  datatype = "INT1U",
   overwrite = TRUE
   )
 
@@ -237,12 +246,12 @@ predictor_0 <- terra::rast(chelsa_climate_0) %>%
   terra::mask(mask_combined) %>%
   terra::project(
     "epsg:8857", method = "near",
-    filename = file.path(tempdir(), "pred_0_equal_area.tif"),
+    filename = file.path(temp_dir, "pred_0_equal_area.tif"),
     overwrite = TRUE
     )
 
 p0 <- raster::quantile(
-  raster::raster(file.path(tempdir(), "pred_0_equal_area.tif")),
+  raster::raster(file.path(temp_dir, "pred_0_equal_area.tif")),
   probs = seq(0, 1, quantile_step),
   na.rm = TRUE
   ) %>%
@@ -264,11 +273,11 @@ print(mat0)
 predictor_0_binned <- terra::classify(
   predictor_0,
   rcl = mat0,
-  filename = file.path(tempdir(), "predictor_0_binned.tif"),
+  filename = file.path(temp_dir, "predictor_0_binned.tif"),
   overwrite = TRUE
   )
 
-unlink(file.path(tempdir(), "pred_0_equal_area.tif"))
+unlink(file.path(temp_dir, "pred_0_equal_area.tif"))
 
 print("\nLoading predictor 1...")
 predictor_1 <- terra::rast(chelsa_climate_1) %>%
@@ -276,12 +285,12 @@ predictor_1 <- terra::rast(chelsa_climate_1) %>%
   terra::mask(mask_combined) %>%
   terra::project(
     "epsg:8857", method = "near",
-    filename = file.path(tempdir(), "pred_1_equal_area.tif"),
+    filename = file.path(temp_dir, "pred_1_equal_area.tif"),
     overwrite = TRUE
   )
 
 p1 <- raster::quantile(
-  raster::raster(file.path(tempdir(), "pred_1_equal_area.tif")),
+  raster::raster(file.path(temp_dir, "pred_1_equal_area.tif")),
   probs = seq(0, 1, quantile_step),
   na.rm = TRUE
 ) %>%
@@ -303,11 +312,11 @@ print(mat1)
 predictor_1_binned <- terra::classify(
   predictor_1,
   rcl = mat1,
-  filename = file.path(tempdir(), "predictor_1_binned.tif"),
+  filename = file.path(temp_dir, "predictor_1_binned.tif"),
   overwrite = TRUE
   )
 
-unlink(file.path(tempdir(), "pred_1_equal_area.tif"))
+unlink(file.path(temp_dir, "pred_1_equal_area.tif"))
 
 df_out <- NULL
 for (bin0 in 1:NROW(mat0)) {
@@ -377,11 +386,12 @@ for (bin0 in 1:NROW(mat0)) {
   terra::tmpFiles(remove = TRUE)
   gc()
 }
-unlink(file.path(tempdir(), "fire_cropped.tif"))
-unlink(file.path(tempdir(), "biome_cropped.tif"))
-unlink(file.path(tempdir(), "pft_cropped.tif"))
-unlink(file.path(tempdir(), "mask_combined.tif"))
-unlink(file.path(tempdir(), "predictor_0_binned.tif"))
-unlink(file.path(tempdir(), "predictor_1_binned.tif"))
+unlink(file.path(temp_dir, "fire_cropped.tif"))
+unlink(file.path(temp_dir, "biome_cropped.tif"))
+unlink(file.path(temp_dir, "pft_cropped.tif"))
+unlink(file.path(temp_dir, "mask_combined.tif"))
+unlink(file.path(temp_dir, "predictor_0_binned.tif"))
+unlink(file.path(temp_dir, "predictor_1_binned.tif"))
+unlink(file.path(temp_dir, "mask_comb.tif"))
 terra::tmpFiles(remove = TRUE)
 gc()
