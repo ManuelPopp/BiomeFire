@@ -216,22 +216,26 @@ rm(pft)
 gc()
 
 print("\nCombining mask layers...")
-mask_combined_rw <- c(biome_cropped, pft_cropped) %>%
+c(biome_cropped, pft_cropped) %>%
   terra::app(
-    fun = "anyNA",
+    fun = "anyNA"
+    ) %>%
+  terra::writeRaster(
     filename = file.path(temp_dir, "mask_comb.tif"),
     datatype = "INT1U",
     overwrite = TRUE
-    )
+  )
+mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
 
 print("\nReclassifying mask...")
-mask_combined <- terra::classify(
+terra::classify(
   mask_combined_rw,
   rcl = matrix(c(0, 1, 0, NA), ncol = 2),
   filename = file.path(temp_dir, "mask_combined.tif"),
   datatype = "INT1U",
   overwrite = TRUE
   )
+mask_combined <- terra::rast(file.path(temp_dir, "mask_combined.tif"))
 
 rm(mask_combined_rw)
 rm(biome_cropped)
@@ -241,7 +245,7 @@ gc()
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
 print("\nLoading predictor 0...")
-predictor_0 <- terra::rast(chelsa_climate_0) %>%
+terra::rast(chelsa_climate_0) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined) %>%
   terra::project(
@@ -249,6 +253,7 @@ predictor_0 <- terra::rast(chelsa_climate_0) %>%
     filename = file.path(temp_dir, "pred_0_equal_area.tif"),
     overwrite = TRUE
     )
+predictor_0 <- terra::rast(file.path(temp_dir, "pred_0_equal_area.tif"))
 
 p0 <- raster::quantile(
   raster::raster(file.path(temp_dir, "pred_0_equal_area.tif")),
@@ -277,10 +282,11 @@ predictor_0_binned <- terra::classify(
   overwrite = TRUE
   )
 
+rm(predictor_0)
 unlink(file.path(temp_dir, "pred_0_equal_area.tif"))
 
 print("\nLoading predictor 1...")
-predictor_1 <- terra::rast(chelsa_climate_1) %>%
+terra::rast(chelsa_climate_1) %>%
   terra::crop(extent) %>%
   terra::mask(mask_combined) %>%
   terra::project(
@@ -288,6 +294,7 @@ predictor_1 <- terra::rast(chelsa_climate_1) %>%
     filename = file.path(temp_dir, "pred_1_equal_area.tif"),
     overwrite = TRUE
   )
+predictor_1 <- terra::rast(file.path(temp_dir, "pred_1_equal_area.tif"))
 
 p1 <- raster::quantile(
   raster::raster(file.path(temp_dir, "pred_1_equal_area.tif")),
@@ -316,6 +323,7 @@ predictor_1_binned <- terra::classify(
   overwrite = TRUE
   )
 
+rm(predictor_1)
 unlink(file.path(temp_dir, "pred_1_equal_area.tif"))
 
 df_out <- NULL
