@@ -218,11 +218,11 @@ gc()
 print("\nCombining mask layers...")
 c(biome_cropped, pft_cropped) %>%
   terra::app(
-    fun = function(x){as.integer(anyNA(x))}
+    fun = "anyNA"
     ) %>%
   terra::writeRaster(
     filename = file.path(temp_dir, "mask_comb.tif"),
-    datatype = "INT1U",
+    datatype = "LOG1S",
     overwrite = TRUE
   )
 mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
