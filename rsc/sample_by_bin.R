@@ -216,15 +216,42 @@ rm(pft)
 gc()
 
 print("\nCombining mask layers...")
-c(biome_cropped, pft_cropped) %>%
-  terra::app(
-    fun = "anyNA"
-    ) %>%
+# define extents
+ext_w = terra::ext(-180, 0, -90, 90)
+ext_e = terra::ext(0, 180, -90, 90)
+
+# west
+c(
+  terra::crop(biome_cropped, ext_w),
+  terra::crop(pft_cropped, ext_w)
+) %>%
+  terra::app(fun = "anyNA") %>%
   terra::writeRaster(
-    filename = file.path(temp_dir, "mask_comb.tif"),
+    filename = file.path(temp_dir, "mask_w.tif"),
     datatype = "LOG1S",
     overwrite = TRUE
   )
+
+# east
+c(
+  terra::crop(biome_cropped, ext_e),
+  terra::crop(pft_cropped, ext_e)
+) %>%
+  terra::app(fun = "anyNA") %>%
+  terra::writeRaster(
+    filename = file.path(temp_dir, "mask_e.tif"),
+    datatype = "LOG1S",
+    overwrite = TRUE
+  )
+
+# merge directly to disk
+terra::merge(
+  terra::rast(file.path(temp_dir, "mask_w.tif")),
+  terra::rast(file.path(temp_dir, "mask_e.tif")),
+  filename = file.path(temp_dir, "mask_comb.tif"),
+  datatype = "LOG1S",
+  overwrite = TRUE
+)
 mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
 
 print("\nReclassifying mask...")
