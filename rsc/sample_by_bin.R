@@ -228,7 +228,7 @@ c(
   terra::app(fun = "anyNA") %>%
   terra::writeRaster(
     filename = file.path(temp_dir, "mask_w.tif"),
-    datatype = "LOG1S",
+    datatype = "INT1U",
     overwrite = TRUE
   )
 
@@ -240,7 +240,7 @@ c(
   terra::app(fun = "anyNA") %>%
   terra::writeRaster(
     filename = file.path(temp_dir, "mask_e.tif"),
-    datatype = "LOG1S",
+    datatype = "INT1U",
     overwrite = TRUE
   )
 
@@ -249,7 +249,7 @@ terra::merge(
   terra::rast(file.path(temp_dir, "mask_w.tif")),
   terra::rast(file.path(temp_dir, "mask_e.tif")),
   filename = file.path(temp_dir, "mask_comb.tif"),
-  datatype = "LOG1S",
+  datatype = "INT1U",
   overwrite = TRUE
 )
 mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
