@@ -220,6 +220,10 @@ print("\nCombining mask layers...")
 ext_w = terra::ext(-180, 0, -90, 90)
 ext_e = terra::ext(0, 180, -90, 90)
 
+print(paste("CRS of biome_cropped:", terra::crs(biome_cropped)))
+print(paste("CRS of pft_cropped:", terra::crs(pft_cropped)))
+
+print("Producing West half")
 # west
 c(
   terra::crop(biome_cropped, ext_w),
@@ -232,6 +236,7 @@ c(
     overwrite = TRUE
   )
 
+print("Producing East half")
 # east
 c(
   terra::crop(biome_cropped, ext_e),
@@ -244,13 +249,14 @@ c(
     overwrite = TRUE
   )
 
+print("Merging to disc...")
 # merge directly to disk
 terra::merge(
   terra::rast(file.path(temp_dir, "mask_w.tif")),
   terra::rast(file.path(temp_dir, "mask_e.tif")),
   filename = file.path(temp_dir, "mask_comb.tif"),
-  datatype = "INT1U",
-  overwrite = TRUE
+  overwrite = TRUE,
+  wopt = list(datatype = "INT1U")
 )
 mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
 
@@ -259,8 +265,8 @@ terra::classify(
   mask_combined_rw,
   rcl = matrix(c(0, 1, 0, NA), ncol = 2),
   filename = file.path(temp_dir, "mask_combined.tif"),
-  datatype = "INT1U",
-  overwrite = TRUE
+  overwrite = TRUE,
+  datatype = "INT1U"
   )
 mask_combined <- terra::rast(file.path(temp_dir, "mask_combined.tif"))
 
