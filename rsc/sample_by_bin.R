@@ -100,6 +100,7 @@ collapse_bins <- function(r) {
 #>----------------------------------------------------------------------------<|
 #> Settings
 args <- commandArgs(trailingOnly = TRUE)
+continue = any(args == "--continue")
 recalculate <- TRUE
 seed <- 42
 set.seed(seed)
@@ -109,6 +110,11 @@ climate_var_1 <- "swb"
 
 quantile_step <- 0.2
 n_bin <- floor(1 / quantile_step)
+
+subdir <- paste(
+  "climate_bin_data", climate_var_0, climate_var_1, n_bin,
+  sep = "_"
+)
 
 if (length(args) > 0) {
   biome_name <- paste0("Olson_biome_", as.character(args[1]))
@@ -360,7 +366,22 @@ rm(predictor_1)
 unlink(file.path(temp_dir, "pred_1_equal_area.tif"))
 
 df_out <- NULL
+
+if (continue) {
+  load(
+    file = file.path(
+      dir_lud, subdir, paste0(biome_name, "_bin.Rsave")
+    )
+  )
+  existing_0 <- unique(df_out$Bin0)
+  existing_1 <- unique(df_out$Bin1)
+} else {
+  existing_0 <- c()
+  existing_1 <- c()
+}
+
 for (bin0 in 1:NROW(mat0)) {
+  if (bin0 %in% existing_0) {next}
   # Create combined mask
   print(
     paste("\nCreating predictor mask outer bin", bin0, "of", length(mat0))
@@ -369,6 +390,7 @@ for (bin0 in 1:NROW(mat0)) {
     terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
   
   for (bin1 in 1:NROW(mat1)) {
+    if (bin1 %in% existing_1) {next}
     print(paste("\nSub-bin", bin1, "of", length(mat1)))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
       terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
@@ -401,11 +423,6 @@ for (bin0 in 1:NROW(mat0)) {
     } else {
       df_out <- rbind(df_out, fdat)
     }
-    
-    subdir <- paste(
-      "climate_bin_data", climate_var_0, climate_var_1, n_bin,
-      sep = "_"
-      )
     if (!dir.exists(file.path(dir_lud, subdir))) {
       dir.create(file.path(dir_lud, subdir))
     }

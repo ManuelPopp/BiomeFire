@@ -71,8 +71,10 @@ for (i in 1:length(files)) {
   means <- c()
   
   for (bin in levels(dfl$Bins)) {
-    trend_tests[[bin]] <- trend::mk.test(dfl[which(dfl$Bins == bin),]$Percentage)
-    mod <- lm(Percentage ~ Year, data = dfl[which(dfl$Bins == bin),])
+    trend_tests[[bin]] <- trend::mk.test(
+      dfl[which(dfl$Bins == bin),]$Percentage)
+    mod <- lm(Percentage ~ Year, data = dfl[which(dfl$Bins == bin),]
+              )
     slope <- coefficients(mod)[2]
     slopes <- c(slopes, slope)
     p_vals <- c(p_vals, trend_tests[[bin]]$p.val)
@@ -130,7 +132,10 @@ gg_effectsize <- ggplot2::ggplot(
   trends_df, aes(x = col, y = row, fill = Slope)
   ) +
   ggplot2::geom_tile(colour = "grey50") +
-  ggplot2::geom_text(ggplot2::aes(label = Signif, colour = abs(Slope) > 0.1), size = 5) +
+  ggplot2::geom_text(
+    ggplot2::aes(label = Signif, colour = abs(Slope) > 0.1),
+    size = 5
+    ) +
   ggplot2::scale_fill_gradientn(
     colours = white_turbo(seq(0, 1, length.out = 512)), limits = c(-0.3, 0.3)
   ) +
