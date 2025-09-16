@@ -61,7 +61,7 @@ freq_tab <- function(r) {
   all_vals <- data.frame(value = c(0, 1))
   f2 <- merge(all_vals, f, by = "value", all.x = TRUE)
   f2$count[is.na(f2$count)] <- 0
-  return(f2)
+  return(f2[, c("layer", "value", "count")])
 }
 
 collapse_bins <- function(r) {
@@ -223,53 +223,70 @@ gc()
 
 print("\nCombining mask layers...")
 # define extents
-ext_w = terra::ext(-180, 0, -90, 90)
-ext_e = terra::ext(0, 180, -90, 90)
+ext_w = terra::ext(-180, 0, -90, 90) %>% terra::intersect(extent)
+ext_e = terra::ext(0, 180, -90, 90) %>% terra::intersect(extent)
 
 print(paste("CRS of biome_cropped:", terra::crs(biome_cropped)))
 print(paste("CRS of pft_cropped:", terra::crs(pft_cropped)))
 
 print("Producing West half")
 # west
-c(
-  terra::crop(biome_cropped, ext_w),
-  terra::crop(pft_cropped, ext_w)
-) %>%
-  terra::app(fun = "anyNA") %>%
-  terra::writeRaster(
-    filename = file.path(temp_dir, "mask_w.tif"),
-    datatype = "INT1U",
-    overwrite = TRUE
-  )
+if (!is.null(ext_w)) {
+  c(
+    terra::crop(biome_cropped, ext_w),
+    terra::crop(pft_cropped, ext_w)
+  ) %>%
+    terra::app(fun = "anyNA") %>%
+    terra::writeRaster(
+      filename = file.path(temp_dir, "mask_w.tif"),
+      datatype = "INT1U",
+      overwrite = TRUE
+    )
+}
 
 print("Producing East half")
 # east
-c(
-  terra::crop(biome_cropped, ext_e),
-  terra::crop(pft_cropped, ext_e)
-) %>%
-  terra::app(fun = "anyNA") %>%
-  terra::writeRaster(
-    filename = file.path(temp_dir, "mask_e.tif"),
-    datatype = "INT1U",
-    overwrite = TRUE
-  )
+if (!is.null(ext_e)) {
+  c(
+    terra::crop(biome_cropped, ext_e),
+    terra::crop(pft_cropped, ext_e)
+  ) %>%
+    terra::app(fun = "anyNA") %>%
+    terra::writeRaster(
+      filename = file.path(temp_dir, "mask_e.tif"),
+      datatype = "INT1U",
+      overwrite = TRUE
+    )
+}
 
 print("Merging to disc...")
 # merge directly to disk
-terra::merge(
-  terra::rast(file.path(temp_dir, "mask_w.tif")),
-  terra::rast(file.path(temp_dir, "mask_e.tif")),
-  filename = file.path(temp_dir, "mask_comb.tif"),
-  overwrite = TRUE,
-  wopt = list(datatype = "INT1U")
-)
+if (is.null(ext_w)) {
+  file.copy(
+    file.path(temp_dir, "mask_e.tif"),
+    file.path(temp_dir, "mask_comb.tif")
+    )
+} else if (is.null(ext_e)) {
+  file.copy(
+    file.path(temp_dir, "mask_w.tif"),
+    file.path(temp_dir, "mask_comb.tif")
+  )
+} else {
+  terra::merge(
+    terra::rast(file.path(temp_dir, "mask_w.tif")),
+    terra::rast(file.path(temp_dir, "mask_e.tif")),
+    filename = file.path(temp_dir, "mask_comb.tif"),
+    overwrite = TRUE,
+    wopt = list(datatype = "INT1U")
+  )
+}
+
 mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
 
 print("\nReclassifying mask...")
 terra::classify(
   mask_combined_rw,
-  rcl = matrix(c(0, 1, 0, NA), ncol = 2),
+  rcl = matrix(c(0, 1, 1, NA), ncol = 2),
   filename = file.path(temp_dir, "mask_combined.tif"),
   overwrite = TRUE,
   datatype = "INT1U"
@@ -387,28 +404,26 @@ for (bin0 in 1:NROW(mat0)) {
     paste("\nCreating predictor mask outer bin", bin0, "of", length(mat0))
     )
   pred_mask_0 <- (predictor_0_binned == bin0) %>%
-    terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
+    terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
   
   for (bin1 in 1:NROW(mat1)) {
     if (bin1 %in% existing_1) {next}
     print(paste("\nSub-bin", bin1, "of", length(mat1)))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
-      terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
+      terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
     
     pred_mask_combined <- c(pred_mask_0, pred_mask_1) %>%
       terra::app(fun = "anyNA") %>%
-      terra::classify(rcl = matrix(c(0, 1, 0, NA), ncol = 2))
+      terra::classify(rcl = matrix(c(0, 1, 1, NA), ncol = 2))
     
     fire_masked <- fire_cropped %>%
       terra::mask(pred_mask_combined, maskvalue = NA, updatevalue = NA)
     
     res <- lapply(
-      1:terra::nlyr(fire_masked), function(i) freq_tab(fire_masked[[i]])
-      )
-    print(res)
-    ftab <- terra::freq(fire_masked)
-    names(ftab) <- c("Year", "Fire", "Count")
-    fdat <- as.data.frame(ftab)
+     1:terra::nlyr(fire_masked), function(i) freq_tab(fire_masked[[i]])
+     )
+    fdat <- do.call(rbind, res)
+    names(fdat) <- c("Year", "Fire", "Count")
     fdat$Bin0 <- bin0
     fdat$Bin1 <- bin1
     fdat$Year <- rep(
@@ -444,6 +459,7 @@ for (bin0 in 1:NROW(mat0)) {
   terra::tmpFiles(remove = TRUE)
   gc()
 }
+
 unlink(file.path(temp_dir, "fire_cropped.tif"))
 unlink(file.path(temp_dir, "biome_cropped.tif"))
 unlink(file.path(temp_dir, "pft_cropped.tif"))

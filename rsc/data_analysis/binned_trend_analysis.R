@@ -39,14 +39,15 @@ for (i in 1:length(files)) {
   burned <- df_out[which(df_out$Fire == 1),]
   nonburned <- df_out[which(df_out$Fire == 0),]
   
-  df <- burned
-  df$Percentage <- (burned$Count * 100) / (nonburned$Count + burned$Count)
-  
-  df <- df[, -c(2, 3)]
-  
-  if (df$Year[1] < 2000) {
-    df$Year <- df$Year + 2000
-  }
+  df <- df_out %>%
+    tidyr::pivot_wider(
+      id_cols = c(Year, Bin0, Bin1),
+      names_from = Fire,
+      values_from = Count,
+      names_prefix = "",
+      names_glue = "{ifelse(Fire == 1, 'Burned', 'Nonburned')}"
+    ) %>%
+    dplyr::mutate(Percentage = (Burned * 100) / (Burned + Nonburned))
   
   dfl <- df %>%
     dplyr::mutate(Bins = paste0(Bin0, Bin1)) %>%
@@ -72,9 +73,9 @@ for (i in 1:length(files)) {
   
   for (bin in levels(dfl$Bins)) {
     trend_tests[[bin]] <- trend::mk.test(
-      dfl[which(dfl$Bins == bin),]$Percentage)
-    mod <- lm(Percentage ~ Year, data = dfl[which(dfl$Bins == bin),]
-              )
+      dfl[which(dfl$Bins == bin),]$Percentage
+      )
+    mod <- lm(Percentage ~ Year, data = dfl[which(dfl$Bins == bin),])
     slope <- coefficients(mod)[2]
     slopes <- c(slopes, slope)
     p_vals <- c(p_vals, trend_tests[[bin]]$p.val)
