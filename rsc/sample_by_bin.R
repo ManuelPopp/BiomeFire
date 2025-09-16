@@ -374,14 +374,14 @@ if (continue) {
     )
   )
   existing_0 <- unique(df_out$Bin0)
-  existing_1 <- unique(df_out$Bin1)
+  existing_1 <- unique(df_out[which(df_out$Bin0 == max(df_out$Bin0)), ]$Bin1)
 } else {
   existing_0 <- c()
   existing_1 <- c()
 }
 
 for (bin0 in 1:NROW(mat0)) {
-  if (bin0 %in% existing_0) {next}
+  if (bin0 %in% sort(existing_0)[1:(length(existing_0) - 1)]) {next}
   # Create combined mask
   print(
     paste("\nCreating predictor mask outer bin", bin0, "of", length(mat0))
