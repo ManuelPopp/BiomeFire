@@ -451,12 +451,10 @@ for (bin0 in 1:NROW(mat0)) {
     
     rm(fire_masked)
     rm(pred_mask_1)
-    terra::tmpFiles(remove = TRUE)
     gc()
   }
   
   rm(pred_mask_0)
-  terra::tmpFiles(remove = TRUE)
   gc()
 }
 
