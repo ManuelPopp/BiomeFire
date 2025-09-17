@@ -101,7 +101,7 @@ collapse_bins <- function(r) {
 #> Settings
 args <- commandArgs(trailingOnly = TRUE)
 continue = any(args == "--continue")
-recalculate <- TRUE
+recalculate <- FALSE
 seed <- 42
 set.seed(seed)
 
@@ -222,6 +222,7 @@ rm(pft)
 gc()
 
 print("\nCombining mask layers...")
+if (!file.exists(file.path(temp_dir, "mask_combined.tif") | recalculate) {
 # define extents
 ext_w = terra::ext(-180, 0, -90, 90) %>% terra::intersect(extent)
 ext_e = terra::ext(0, 180, -90, 90) %>% terra::intersect(extent)
@@ -292,7 +293,7 @@ terra::classify(
   datatype = "INT1U"
   )
 mask_combined <- terra::rast(file.path(temp_dir, "mask_combined.tif"))
-
+}
 rm(mask_combined_rw)
 rm(biome_cropped)
 rm(pft_cropped)
@@ -301,86 +302,92 @@ gc()
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
 print("\nLoading predictor 0...")
-terra::rast(chelsa_climate_0) %>%
-  terra::crop(extent) %>%
-  terra::mask(mask_combined) %>%
-  terra::project(
-    "epsg:8857", method = "near",
-    filename = file.path(temp_dir, "pred_0_equal_area.tif"),
+if (!file.exists(file.path(temp_dir, "predictor_0_binned.tif")) | recalculate) {
+  terra::rast(chelsa_climate_0) %>%
+    terra::crop(extent) %>%
+    terra::mask(mask_combined) %>%
+    terra::project(
+      "epsg:8857", method = "near",
+      filename = file.path(temp_dir, "pred_0_equal_area.tif"),
+      overwrite = TRUE
+      )
+  predictor_0 <- terra::rast(file.path(temp_dir, "pred_0_equal_area.tif"))
+  
+  p0 <- raster::quantile(
+    raster::raster(file.path(temp_dir, "pred_0_equal_area.tif")),
+    probs = seq(0, 1, quantile_step),
+    na.rm = TRUE
+    ) %>%
+    unname() %>%
+    t() %>%
+    unname() %>%
+    as.vector()
+  
+  p0[1] <- p0[1] - 1
+  p0[length(p0)] <- p0[length(p0)] + 1
+  mat0 <- cbind(
+    p0[1:(length(p0) - 1)],
+    p0[2:length(p0)],
+    seq(1, (length(p0) - 1))
+    )
+  cat("\nReclassification matrix for variable 0:\n")
+  print(mat0)
+  
+  predictor_0_binned <- terra::classify(
+    predictor_0,
+    rcl = mat0,
+    filename = file.path(temp_dir, "predictor_0_binned.tif"),
     overwrite = TRUE
     )
-predictor_0 <- terra::rast(file.path(temp_dir, "pred_0_equal_area.tif"))
-
-p0 <- raster::quantile(
-  raster::raster(file.path(temp_dir, "pred_0_equal_area.tif")),
-  probs = seq(0, 1, quantile_step),
-  na.rm = TRUE
-  ) %>%
-  unname() %>%
-  t() %>%
-  unname() %>%
-  as.vector()
-
-p0[1] <- p0[1] - 1
-p0[length(p0)] <- p0[length(p0)] + 1
-mat0 <- cbind(
-  p0[1:(length(p0) - 1)],
-  p0[2:length(p0)],
-  seq(1, (length(p0) - 1))
-  )
-cat("\nReclassification matrix for variable 0:\n")
-print(mat0)
-
-predictor_0_binned <- terra::classify(
-  predictor_0,
-  rcl = mat0,
-  filename = file.path(temp_dir, "predictor_0_binned.tif"),
-  overwrite = TRUE
-  )
-
-rm(predictor_0)
-unlink(file.path(temp_dir, "pred_0_equal_area.tif"))
+  
+  rm(predictor_0)
+  unlink(file.path(temp_dir, "pred_0_equal_area.tif"))
+}
+predictor_0_binned <- terra::rast(file.path(temp_dir, "predictor_0_binned.tif"))
 
 print("\nLoading predictor 1...")
-terra::rast(chelsa_climate_1) %>%
-  terra::crop(extent) %>%
-  terra::mask(mask_combined) %>%
-  terra::project(
-    "epsg:8857", method = "near",
-    filename = file.path(temp_dir, "pred_1_equal_area.tif"),
+if (!file.exists(file.path(temp_dir, "predictor_1_binned.tif")) | recalculate) {
+  terra::rast(chelsa_climate_1) %>%
+    terra::crop(extent) %>%
+    terra::mask(mask_combined) %>%
+    terra::project(
+      "epsg:8857", method = "near",
+      filename = file.path(temp_dir, "pred_1_equal_area.tif"),
+      overwrite = TRUE
+    )
+  predictor_1 <- terra::rast(file.path(temp_dir, "pred_1_equal_area.tif"))
+  
+  p1 <- raster::quantile(
+    raster::raster(file.path(temp_dir, "pred_1_equal_area.tif")),
+    probs = seq(0, 1, quantile_step),
+    na.rm = TRUE
+  ) %>%
+    unname() %>%
+    t() %>%
+    unname() %>%
+    as.vector()
+  
+  p1[1] <- p1[1] - 1
+  p1[length(p1)] <- p1[length(p1)] + 1
+  mat1 <- cbind(
+    p1[1:(length(p1) - 1)],
+    p1[2:length(p1)],
+    seq(1, (length(p1) - 1))
+    )
+  cat("\nReclassification matrix for variable 1:\n")
+  print(mat1)
+  
+  predictor_1_binned <- terra::classify(
+    predictor_1,
+    rcl = mat1,
+    filename = file.path(temp_dir, "predictor_1_binned.tif"),
     overwrite = TRUE
-  )
-predictor_1 <- terra::rast(file.path(temp_dir, "pred_1_equal_area.tif"))
-
-p1 <- raster::quantile(
-  raster::raster(file.path(temp_dir, "pred_1_equal_area.tif")),
-  probs = seq(0, 1, quantile_step),
-  na.rm = TRUE
-) %>%
-  unname() %>%
-  t() %>%
-  unname() %>%
-  as.vector()
-
-p1[1] <- p1[1] - 1
-p1[length(p1)] <- p1[length(p1)] + 1
-mat1 <- cbind(
-  p1[1:(length(p1) - 1)],
-  p1[2:length(p1)],
-  seq(1, (length(p1) - 1))
-  )
-cat("\nReclassification matrix for variable 1:\n")
-print(mat1)
-
-predictor_1_binned <- terra::classify(
-  predictor_1,
-  rcl = mat1,
-  filename = file.path(temp_dir, "predictor_1_binned.tif"),
-  overwrite = TRUE
-  )
-
-rm(predictor_1)
-unlink(file.path(temp_dir, "pred_1_equal_area.tif"))
+    )
+  
+  rm(predictor_1)
+  unlink(file.path(temp_dir, "pred_1_equal_area.tif"))
+}
+predictor_1_binned <- terra::rast(file.path(temp_dir, "predictor_1_binned.tif"))
 
 df_out <- NULL
 
