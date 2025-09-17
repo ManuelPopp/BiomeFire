@@ -410,14 +410,14 @@ for (bin0 in 1:n_bin) {
   if (bin0 %in% sort(existing_0)[1:(length(existing_0) - 1)]) {next}
   # Create combined mask
   print(
-    paste("\nCreating predictor mask outer bin", bin0, "of", length(mat0))
+    paste("\nCreating predictor mask outer bin", bin0, "of", n_bin)
     )
   pred_mask_0 <- (predictor_0_binned == bin0) %>%
     terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
   
   for (bin1 in 1:n_bin) {
     if (bin1 %in% existing_1) {next}
-    print(paste("\nSub-bin", bin1, "of", length(mat1)))
+    print(paste("\nSub-bin", bin1, "of", n_bin))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
       terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
     
