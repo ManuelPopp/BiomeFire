@@ -222,27 +222,27 @@ rm(pft)
 gc()
 
 print("\nCombining mask layers...")
-if (!file.exists(file.path(temp_dir, "mask_combined.tif") | recalculate) {
-# define extents
-ext_w = terra::ext(-180, 0, -90, 90) %>% terra::intersect(extent)
-ext_e = terra::ext(0, 180, -90, 90) %>% terra::intersect(extent)
-
-print(paste("CRS of biome_cropped:", terra::crs(biome_cropped)))
-print(paste("CRS of pft_cropped:", terra::crs(pft_cropped)))
-
-print("Producing West half")
-# west
-if (!is.null(ext_w)) {
-  c(
-    terra::crop(biome_cropped, ext_w),
-    terra::crop(pft_cropped, ext_w)
-  ) %>%
-    terra::app(fun = "anyNA") %>%
-    terra::writeRaster(
-      filename = file.path(temp_dir, "mask_w.tif"),
-      datatype = "INT1U",
-      overwrite = TRUE
-    )
+if (!file.exists(file.path(temp_dir, "mask_combined.tif") | recalculate)) {
+  # define extents
+  ext_w = terra::ext(-180, 0, -90, 90) %>% terra::intersect(extent)
+  ext_e = terra::ext(0, 180, -90, 90) %>% terra::intersect(extent)
+  
+  print(paste("CRS of biome_cropped:", terra::crs(biome_cropped)))
+  print(paste("CRS of pft_cropped:", terra::crs(pft_cropped)))
+  
+  print("Producing West half")
+  # west
+  if (!is.null(ext_w)) {
+    c(
+      terra::crop(biome_cropped, ext_w),
+      terra::crop(pft_cropped, ext_w)
+    ) %>%
+      terra::app(fun = "anyNA") %>%
+      terra::writeRaster(
+        filename = file.path(temp_dir, "mask_w.tif"),
+        datatype = "INT1U",
+        overwrite = TRUE
+      )
 }
 
 print("Producing East half")
