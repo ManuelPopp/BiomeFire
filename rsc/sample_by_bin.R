@@ -222,7 +222,7 @@ rm(pft)
 gc()
 
 print("\nCombining mask layers...")
-if (!file.exists(file.path(temp_dir, "mask_combined.tif") | recalculate)) {
+if (!file.exists(file.path(temp_dir, "mask_combined.tif")) | recalculate) {
   # define extents
   ext_w = terra::ext(-180, 0, -90, 90) %>% terra::intersect(extent)
   ext_e = terra::ext(0, 180, -90, 90) %>% terra::intersect(extent)
