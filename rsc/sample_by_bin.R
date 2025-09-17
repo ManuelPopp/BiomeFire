@@ -397,6 +397,8 @@ if (continue) {
       dir_lud, subdir, paste0(biome_name, "_bin.Rsave")
     )
   )
+}
+if (!is.null(df_out) && nrow(df_out) > 0) {
   existing_0 <- unique(df_out$Bin0)
   existing_1 <- unique(df_out[which(df_out$Bin0 == max(df_out$Bin0)), ]$Bin1)
 } else {
@@ -404,7 +406,7 @@ if (continue) {
   existing_1 <- c()
 }
 
-for (bin0 in 1:NROW(mat0)) {
+for (bin0 in 1:n_bin) {
   if (bin0 %in% sort(existing_0)[1:(length(existing_0) - 1)]) {next}
   # Create combined mask
   print(
@@ -413,7 +415,7 @@ for (bin0 in 1:NROW(mat0)) {
   pred_mask_0 <- (predictor_0_binned == bin0) %>%
     terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
   
-  for (bin1 in 1:NROW(mat1)) {
+  for (bin1 in 1:n_bin) {
     if (bin1 %in% existing_1) {next}
     print(paste("\nSub-bin", bin1, "of", length(mat1)))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
