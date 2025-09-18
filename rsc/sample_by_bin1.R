@@ -76,17 +76,17 @@ collapse_bins <- function(r) {
   keep_rows <- vapply(
     row_bins, function(idx) {
       any(!is.na(m[idx, , drop = FALSE]))
-      },
+    },
     logical(1)
-    )
+  )
   
   keep_cols <- vapply(
     col_bins,
     function(idx) {
       any(!is.na(m[ , idx, drop = FALSE]))
-      },
+    },
     logical(1)
-    )
+  )
   
   kept_row_idx <- unlist(row_bins[keep_rows])
   kept_col_idx <- unlist(col_bins[keep_cols])
@@ -145,10 +145,10 @@ wsl_cols <- c(
 # Directories
 chelsa_climate_0 <- file.path(
   dir_stc, "chelsa_1981-2010", paste0(climate_var_0, "_clim.tif")
-  )
+)
 chelsa_climate_1 <- file.path(
   dir_stc, "chelsa_1981-2010", paste0(climate_var_1, "_clim.tif")
-  )
+)
 
 # Response
 f_fire <- list.files(dir_fire, pattern = ".tif", full.names = TRUE)[-1]
@@ -208,13 +208,13 @@ fire_cropped <- terra::crop(fire, extent) %>%
   terra::project(
     "epsg:8857",
     method = "near"
-    )
+  )
 biome_cropped <- terra::crop(
   biome, extent
-  )
+)
 pft_cropped <- terra::crop(
   pft, extent
-  )
+)
 
 rm(fire)
 rm(biome)
@@ -243,56 +243,56 @@ if (!file.exists(file.path(temp_dir, "mask_combined.tif")) | recalculate) {
         datatype = "INT1U",
         overwrite = TRUE
       )
-}
-
-print("Producing East half")
-# east
-if (!is.null(ext_e)) {
-  c(
-    terra::crop(biome_cropped, ext_e),
-    terra::crop(pft_cropped, ext_e)
-  ) %>%
-    terra::app(fun = "anyNA") %>%
-    terra::writeRaster(
-      filename = file.path(temp_dir, "mask_e.tif"),
-      datatype = "INT1U",
-      overwrite = TRUE
+  }
+  
+  print("Producing East half")
+  # east
+  if (!is.null(ext_e)) {
+    c(
+      terra::crop(biome_cropped, ext_e),
+      terra::crop(pft_cropped, ext_e)
+    ) %>%
+      terra::app(fun = "anyNA") %>%
+      terra::writeRaster(
+        filename = file.path(temp_dir, "mask_e.tif"),
+        datatype = "INT1U",
+        overwrite = TRUE
+      )
+  }
+  
+  print("Merging to disc...")
+  # merge directly to disk
+  if (is.null(ext_w)) {
+    file.copy(
+      file.path(temp_dir, "mask_e.tif"),
+      file.path(temp_dir, "mask_comb.tif")
     )
-}
-
-print("Merging to disc...")
-# merge directly to disk
-if (is.null(ext_w)) {
-  file.copy(
-    file.path(temp_dir, "mask_e.tif"),
-    file.path(temp_dir, "mask_comb.tif")
+  } else if (is.null(ext_e)) {
+    file.copy(
+      file.path(temp_dir, "mask_w.tif"),
+      file.path(temp_dir, "mask_comb.tif")
     )
-} else if (is.null(ext_e)) {
-  file.copy(
-    file.path(temp_dir, "mask_w.tif"),
-    file.path(temp_dir, "mask_comb.tif")
-  )
-} else {
-  terra::merge(
-    terra::rast(file.path(temp_dir, "mask_w.tif")),
-    terra::rast(file.path(temp_dir, "mask_e.tif")),
-    filename = file.path(temp_dir, "mask_comb.tif"),
+  } else {
+    terra::merge(
+      terra::rast(file.path(temp_dir, "mask_w.tif")),
+      terra::rast(file.path(temp_dir, "mask_e.tif")),
+      filename = file.path(temp_dir, "mask_comb.tif"),
+      overwrite = TRUE,
+      wopt = list(datatype = "INT1U")
+    )
+  }
+  
+  mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
+  
+  print("\nReclassifying mask...")
+  terra::classify(
+    mask_combined_rw,
+    rcl = matrix(c(0, 1, 1, NA), ncol = 2),
+    filename = file.path(temp_dir, "mask_combined.tif"),
     overwrite = TRUE,
-    wopt = list(datatype = "INT1U")
+    datatype = "INT1U"
   )
-}
-
-mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
-
-print("\nReclassifying mask...")
-terra::classify(
-  mask_combined_rw,
-  rcl = matrix(c(0, 1, 1, NA), ncol = 2),
-  filename = file.path(temp_dir, "mask_combined.tif"),
-  overwrite = TRUE,
-  datatype = "INT1U"
-  )
-mask_combined <- terra::rast(file.path(temp_dir, "mask_combined.tif"))
+  mask_combined <- terra::rast(file.path(temp_dir, "mask_combined.tif"))
 }
 rm(mask_combined_rw)
 rm(biome_cropped)
@@ -310,14 +310,14 @@ if (!file.exists(file.path(temp_dir, "predictor_0_binned.tif")) | recalculate) {
       "epsg:8857", method = "near",
       filename = file.path(temp_dir, "pred_0_equal_area.tif"),
       overwrite = TRUE
-      )
+    )
   predictor_0 <- terra::rast(file.path(temp_dir, "pred_0_equal_area.tif"))
   
   p0 <- raster::quantile(
     raster::raster(file.path(temp_dir, "pred_0_equal_area.tif")),
     probs = seq(0, 1, quantile_step),
     na.rm = TRUE
-    ) %>%
+  ) %>%
     unname() %>%
     t() %>%
     unname() %>%
@@ -329,7 +329,7 @@ if (!file.exists(file.path(temp_dir, "predictor_0_binned.tif")) | recalculate) {
     p0[1:(length(p0) - 1)],
     p0[2:length(p0)],
     seq(1, (length(p0) - 1))
-    )
+  )
   cat("\nReclassification matrix for variable 0:\n")
   print(mat0)
   
@@ -338,7 +338,7 @@ if (!file.exists(file.path(temp_dir, "predictor_0_binned.tif")) | recalculate) {
     rcl = mat0,
     filename = file.path(temp_dir, "predictor_0_binned.tif"),
     overwrite = TRUE
-    )
+  )
   
   rm(predictor_0)
   unlink(file.path(temp_dir, "pred_0_equal_area.tif"))
@@ -373,7 +373,7 @@ if (!file.exists(file.path(temp_dir, "predictor_1_binned.tif")) | recalculate) {
     p1[1:(length(p1) - 1)],
     p1[2:length(p1)],
     seq(1, (length(p1) - 1))
-    )
+  )
   cat("\nReclassification matrix for variable 1:\n")
   print(mat1)
   
@@ -382,7 +382,7 @@ if (!file.exists(file.path(temp_dir, "predictor_1_binned.tif")) | recalculate) {
     rcl = mat1,
     filename = file.path(temp_dir, "predictor_1_binned.tif"),
     overwrite = TRUE
-    )
+  )
   
   rm(predictor_1)
   unlink(file.path(temp_dir, "pred_1_equal_area.tif"))
@@ -398,25 +398,27 @@ if (continue) {
     )
   )
 }
-if (!is.null(df_out) && nrow(df_out) > 0) {
-  existing_0 <- unique(df_out$Bin0)
-  existing_1 <- unique(df_out[which(df_out$Bin0 == max(df_out$Bin0)), ]$Bin1)
-} else {
-  existing_0 <- c()
-  existing_1 <- c()
-}
+df_out_old <- df_out
+df_out <- NULL
 
 for (bin0 in 1:n_bin) {
-  if (bin0 < max(existing_0, 0)) {next}
   # Create combined mask
   print(
     paste("\nCreating predictor mask outer bin", bin0, "of", n_bin)
-    )
+  )
   pred_mask_0 <- (predictor_0_binned == bin0) %>%
     terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
   
   for (bin1 in 1:n_bin) {
-    if (bin0 == max(existing_0, 0) && bin1 %in% existing_1) {next}
+    if (bin0 %in% unique(df_out_old$Bin0)) {
+      if (bin1 %in% df_out_old[df_out_old$Bin0 == bin0,]$Bin1) {
+        df_out <- rbind(
+          df_out,
+          df_out_old[df_out_old$Bin0 == bin0 & df_out_old$Bin1 == bin1,]
+        )
+        next
+      }
+      }
     print(paste("\nSub-bin", bin1, "of", n_bin))
     pred_mask_1 <- (predictor_1_binned == bin1) %>%
       terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
@@ -429,8 +431,8 @@ for (bin0 in 1:n_bin) {
       terra::mask(pred_mask_combined, maskvalue = NA, updatevalue = NA)
     
     res <- lapply(
-     1:terra::nlyr(fire_masked), function(i) freq_tab(fire_masked[[i]])
-     )
+      1:terra::nlyr(fire_masked), function(i) freq_tab(fire_masked[[i]])
+    )
     fdat <- do.call(rbind, res)
     names(fdat) <- c("Year", "Fire", "Count")
     fdat$Bin0 <- bin0
