@@ -124,17 +124,14 @@ if (length(args) > 0) {
 
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
-  sub_clim <- "chelsa_kg"
   dir_fire <- "L:/poppman/data/bff/dat/annual_fire_maps"
 } else {
   dir_main <- "/lud11/poppman/data/bff"
-  sub_clim <- file.path("lud11", "chelsa_kg")
   dir_fire <- "/lud11/poppman/data/bff/dat/annual_fire_maps"
 }
 
 dir_dat <- file.path(dir_main, "dat")
 dir_lud <- file.path(dir_dat, "lud11")
-dir_ann <- file.path(dir_lud, "annual")
 dir_stc <- file.path(dir_lud, "static")
 
 wsl_cols <- c(
@@ -186,6 +183,10 @@ terra::gdalCache(size = 32768)
 
 temp_dir <- file.path("/lud11/poppman/tmp", biome_name)
 dir.create(temp_dir, showWarnings = FALSE)
+terra::terraOptions(
+  memmax = 500,
+  tempdir = temp_dir
+  )
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
@@ -332,6 +333,12 @@ if (!file.exists(file.path(temp_dir, "predictor_0_binned.tif")) | recalculate) {
     )
   cat("\nReclassification matrix for variable 0:\n")
   print(mat0)
+  cat(
+    mat0,
+    file = file.path(
+      dir_lud, subdir, paste0(biome_name, "_var_0_quantiles.txt")
+      )
+    )
   
   predictor_0_binned <- terra::classify(
     predictor_0,
@@ -376,6 +383,12 @@ if (!file.exists(file.path(temp_dir, "predictor_1_binned.tif")) | recalculate) {
     )
   cat("\nReclassification matrix for variable 1:\n")
   print(mat1)
+  cat(
+    mat1,
+    file = file.path(
+      dir_lud, subdir, paste0(biome_name, "_var_1_quantiles.txt")
+      )
+  )
   
   predictor_1_binned <- terra::classify(
     predictor_1,
@@ -470,6 +483,8 @@ for (bin0 in 1:n_bin) {
 unlink(file.path(temp_dir, "fire_cropped.tif"))
 unlink(file.path(temp_dir, "biome_cropped.tif"))
 unlink(file.path(temp_dir, "pft_cropped.tif"))
+unlink(file.path(temp_dir, "mask_e.tif"))
+unlink(file.path(temp_dir, "mask_w.tif"))
 unlink(file.path(temp_dir, "mask_combined.tif"))
 unlink(file.path(temp_dir, "predictor_0_binned.tif"))
 unlink(file.path(temp_dir, "predictor_1_binned.tif"))
