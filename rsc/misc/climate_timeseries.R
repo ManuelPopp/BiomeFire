@@ -166,6 +166,7 @@ mask <- c(
   )
 
 pr <- terra::rast(f_pr) %>%
+  terra::crop(extent) %>%
   terra::aggregate(fact = 4, fun = "mean") %>%
   terra::mask(mask = mask) %>%
   terra::global(fun = "mean", na.rm = TRUE)
