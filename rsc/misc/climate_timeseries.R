@@ -129,8 +129,10 @@ terra::gdalCache(size = 32768)
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
-pft <- terra::rast(f_pft)
-biome <- terra::rast(f_biome)
+pft <- terra::rast(f_pft) %>%
+  terra::aggregate(fact = 4, fun = function(x){if (all(!is.na(x))) 1 else NA})
+biome <- terra::rast(f_biome) %>%
+  terra::aggregate(fact = 4, fun = function(x){if (all(!is.na(x))) 1 else NA})
 
 # Get biome extent and sampling area extent
 print("\nGet study extent...")
@@ -160,13 +162,11 @@ mask <- c(
 ) %>%
   terra::app(fun = "anyNA") %>%
   terra::classify(
-    rcl = matrix(c(0, 1, 1, NA), ncol = 2),
-    filename = file.path(temp_dir, "mask_combined.tif"),
-    overwrite = TRUE,
-    datatype = "INT1U"
+    rcl = matrix(c(0, 1, 1, NA), ncol = 2)
   )
 
 pr <- terra::rast(f_pr) %>%
+  terra::aggregate(fact = 4, fun = "mean") %>%
   terra::mask(mask = mask) %>%
   terra::global(fun = "mean", na.rm = TRUE)
 pr$year <- years
