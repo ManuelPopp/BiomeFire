@@ -86,8 +86,6 @@ wsl_cols <- c(
 years <- seq(2002, 2018)
 
 # Directories
-climate_var_0 <- "tasmean"
-climate_var_1 <- "swb"
 f_pr <- file.path(
   dir_ann, "pr_resampled_MODIS", paste0("pr_", years, ".tif")
 )
@@ -170,11 +168,23 @@ pr <- terra::rast(f_pr) %>%
   terra::aggregate(fact = 4, fun = "mean") %>%
   terra::mask(mask = mask) %>%
   terra::global(fun = "mean", na.rm = TRUE)
+pr$variable <- "pr"
 pr$year <- years
 pr$biome <- biome_name
 
+tas <- terra::rast(f_tas) %>%
+  terra::crop(extent) %>%
+  terra::aggregate(fact = 4, fun = "mean") %>%
+  terra::mask(mask = mask) %>%
+  terra::global(fun = "mean", na.rm = TRUE)
+tas$variable = "tas"
+tas$year <- years
+tas$biome <- biome_name
+
+clim <- rbind(pr, tas)
+
 write.csv(
-  pr,
-  file = file.path(dir_lud, paste0(biome_name, "_annual_pr.csv")),
+  clim,
+  file = file.path(dir_lud, paste0(biome_name, "_annual_clim.csv")),
   row.names = FALSE
   )
