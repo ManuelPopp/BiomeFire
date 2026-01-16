@@ -30,7 +30,7 @@ library(bigleaf)
 ### =========================================================================
 
 if(interactive()){
-  id=3
+  id=1
 } else {
   id <- as.numeric(commandArgs(trailingOnly=TRUE))
   # .libPaths(new='~/R/x86_64-pc-linux-gnu-library/3.6')
@@ -41,8 +41,8 @@ mnts = paste0("_", seq(1, 12), "_")
 
 #datn=expand.grid(mnts,1984)
 datn = cbind(
-  c("_02_","_03_","_03_","_07_","_06_","_04_","_04_","_04_"),
-  c(1979, 1980, 2018, 2011, 2014, 2019, 2018, 2016)
+  c("_01_"),
+  c(1980)
   )
 datn = as.data.frame(datn)
 
@@ -80,7 +80,7 @@ download.file(url = tfl,destfile = tf_temp)
 
 # Get Radiation file
 rsfl = paste0(
-  "/storage/brunp/Data/CHELSA_V.2.1/RSDS/CHELSA/Monthly/CHELSA_rsds_",
+  "/storage/brunp/Data/CHELSA_V.2.1/rsds/CHELSA/Monthly/CHELSA_rsds_",
   datn[id,2],
   datn[id,1],
   "V.2.1.tif"
@@ -123,6 +123,11 @@ rm(msk)
 ### =========================================================================
 ### Prepare radiation
 ### =========================================================================
+# Print infos
+cat("\nrftl")
+system(paste0('saga_cmd grid_tools 24 -GRIDS="', rtfl, '"'))
+cat("\nrsfl")
+system(paste0('saga_cmd grid_tools 24 -GRIDS="', rsfl, '"'))
 
 # small batch to fix the 180 dateline problem
 tempgrid <- tempfile(fileext = ".sgrd")
@@ -144,7 +149,7 @@ system(
 system(
   paste0(
     "saga_cmd grid_tools 7 -INPUT=",
-    tempgrid, " -MASK=file -RESULT= -THRESHOLD=0.500000 -RESULT=", tempgrid
+    tempgrid, " -MASK=file -THRESHOLD=0.500000 -RESULT=", tempgrid
     )
   )
 system(
@@ -153,9 +158,11 @@ system(
     )
   )
 
+if (!file.exists(rsfl)) {stop("Missing file", rsfl)}
+if (!file.exists(tempgrid)) {stop("Missing file", tempgrid)}
 system(
   paste0(
-    'saga_cmd grid_calculus 1 -RESAMPLING=1 -FORMULA="a*1000/(3600*24)+b/86400" -NAME=Calculation -FNAME=0 -USE_NODATA=0 -TYPE=7 -GRIDS=',
+    'saga_cmd grid_calculus 1 -RESAMPLING=1 -FORMULA="(a*1000+b)/86400" -NAME=Calculation -FNAME=0 -USE_NODATA=0 -TYPE=7 -GRIDS=',
     rsfl, ' -XGRIDS=', tempgrid, ' -RESULT=', rnfl
     )
   )
@@ -196,9 +203,9 @@ w2 = w10 * log((z0 + 2) / z0) / log(10 / z0)
 rm(w10)
 rm(z0)
 
-# Calculate GA
+# Calculate GA: FAO approach in case roughness lengths are unknown
 Ga = w2/208
-rm(w2)
+#rm(w2)
 
 ### =========================================================================
 ### Prepare temperature
@@ -226,6 +233,11 @@ elev = elev[nna]
 pressure = pressure.from.elevation(elev = elev, Tair = temp, VPD = vpd)
 
 rm(elev)
+
+raster::writeRaster(rnet, filename = "/storage/poppman/rlds_philipp.tif")
+raster::writeRaster(w2, filename = "/storage/poppman/w2_philipp.tif")
+raster::writeRaster(vpd, filename = "/storage/poppman/vpd_philipp.tif")
+stop("Done exporting input variables.")
 
 ### =========================================================================
 ### Calculate PET

@@ -7,6 +7,7 @@ require("concaveman")
 dir_lud <- "L:/poppman/data/bff/dat/lud11/"
 dir_fire <- file.path(dir_lud, "annual", "fire_resampled_MODIS")
 dir_dbx <- "C:/Users/poppman/Dropbox/Apps/Overleaf/BiomeFire"
+dir_fig <- "D:/onedrive/OneDrive - Eidg. Forschungsanstalt WSL/switchdrive/PhD/prj/bff/fig"
 
 f_biome <- file.path(dir_lud, "biomes", "olson_ecoregions", "wwf_terr_ecos.shp")
 
@@ -43,8 +44,16 @@ if (!file.exists(file.path(dir_lud, "static", "Fire_sum.tif"))) {
   fire_sum <- terra::rast(file.path(dir_lud, "static", "Fire_sum.tif"))
 }
 
+heat_quantitative <- fire_sum %>%
+  terra::aggregate(fact = 4, fun = "mean", na.rm = TRUE) %>%
+  terra::focal(
+    w = matrix(1, 11, 11) , fun = mean, na.policy = "omit", na.rm = TRUE
+  ) %>%
+  terra::aggregate(fact = 6, fun = "mean") %>%
+  terra::crop(terra::ext(biomes))
+
 heat <- fire_sum %>%
-  terra::aggregate(fact = 4, fun = "max") %>%
+  terra::aggregate(fact = 4, fun = "max", na.rm = TRUE) %>%
   terra::focal(
   w = matrix(1, 11, 11) , fun = mean, na.policy = "omit", na.rm = TRUE
   ) %>%
@@ -127,6 +136,67 @@ ggplot2::ggsave(
   filename = file.path(dir_dbx, "Fire_map.pdf"),
   plot = gg_map, width = 10, height = 6
   )
+
+# Plot quantitative (frequency) fire map
+burned_df <- as.data.frame(
+  terra::project(heat_quantitative, "EPSG:8857"), xy = TRUE
+  )
+max_bdf <- max(burned_df$focal_mean)
+
+heat_sf <- terra::as.polygons(heat_quantitative) %>%
+  sf::st_as_sf() %>%
+  sf::st_transform(crs = "EPSG:8857")
+
+gg_map_quantitative <- ggplot2::ggplot() +
+  ggplot2::geom_sf(
+    data = biomes_equalearth, ggplot2::aes(fill = Biome), color = NA
+  ) +
+  ggplot2::geom_sf(
+    data = boundary_equalearth, color = "grey", fill = NA
+  ) +
+  ggplot2::geom_sf(
+    data = heat_sf, aes(alpha = focal_mean),
+    fill = "black", colour = NA, show.legend = FALSE
+    ) +
+  ggplot2::coord_sf(
+    crs = "EPSG:8857"
+  ) +
+  # ggplot2::geom_tile(
+  #   data = burned_df,
+  #   mapping = ggplot2::aes(
+  #     x = x, y = y,
+  #     alpha = focal_mean / max_bdf * terra::minmax(fire_sum)[2, 1]
+  #     ), fill = "black", show.legend = FALSE
+  # ) +
+  ggplot2::scale_fill_manual(values = colours) +
+  ggplot2::scale_alpha_continuous(
+    range = c(0, 1), na.value = 0, guide = "legend", name = "Fire frequency"
+    ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    legend.title = ggplot2::element_blank(),
+    panel.grid.major = ggplot2::element_line(),
+    panel.grid.minor = ggplot2::element_blank(),
+    axis.title = ggplot2::element_blank(),
+    axis.text = ggplot2::element_blank()
+  ) +
+  ggplot2::scale_x_continuous(breaks = seq(-180, 180, by = 30)) +
+  ggplot2::scale_y_continuous(breaks = seq(-90, 90, by = 30))
+
+ggplot2::ggsave(
+  filename = file.path(dir_fig, "Fire_map_quantitative.png"),
+  plot = gg_map_quantitative, width = 10, height = 6
+)
+ggplot2::ggsave(
+  filename = file.path(dir_fig, "Fire_map_quantitative.svg"),
+  plot = gg_map_quantitative, width = 10, height = 6
+)
+ggplot2::ggsave(
+  filename = file.path(dir_dbx, "Fire_map_quantitative.pdf"),
+  plot = gg_map_quantitative, width = 10, height = 6
+)
 
 # Plot biomes without fire
 gg_biomes <- ggplot2::ggplot() +

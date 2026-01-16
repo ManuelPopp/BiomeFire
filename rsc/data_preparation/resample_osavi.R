@@ -3,7 +3,7 @@ require("terra")
 require("tidyterra")
 require("stringr")
 
-compute_anew = TRUE
+compute_anew = FALSE
 files <- list.files(
   "/lud11/poppman/data/bff/dat/osavi_raw", pattern = ".tif", full.names = TRUE
   )

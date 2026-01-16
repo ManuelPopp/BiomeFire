@@ -131,7 +131,7 @@ burned_area_collection = ee.ImageCollection(MODIS_BURNED_AREA)
 
 images = burned_area_collection.toList(burned_area_collection.size())
 
-years = list(range(2000, 2025))
+years = list(range(2000, 2026))
 
 summarise_by_year(years, collection = burned_area_collection)
 print("All export tasks have been started.")

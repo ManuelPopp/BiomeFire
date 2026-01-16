@@ -6,7 +6,7 @@ var endDate = endYear + '-12-31';
 
 // Define the MODIS product (MOD09A1: Surface Reflectance 500m).
 var modis = ee.ImageCollection(
-  'MODIS/006/MOD09A1'
+  'MODIS/061/MOD09A1'
 ).filterDate(startDate, endDate).select(
   ['sur_refl_b01', 'sur_refl_b02', 'sur_refl_b03']
 ); // Red, Green, and NIR bands (bands 1, 2, and 3)

@@ -63,7 +63,7 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) > 0) {
   biome_name <- paste0("Olson_biome_", as.character(args[1]))
 } else {
-  biome_name <- "Olson_biome_10"
+  biome_name <- "Olson_biome_5"
 }
 
 if (Sys.info()["sysname"] == "Windows") {

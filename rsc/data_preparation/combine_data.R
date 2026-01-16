@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 #>------------------------------------<
 ##
-## Script name: Data analysis
+## Script name: Combine data
 ##
 ## Author: Manuel R. Popp
 ## Email: manuel.popp@wsl.ch

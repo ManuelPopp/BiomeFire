@@ -88,6 +88,49 @@ plot_order <- biome_climate %>%
 df$Biome_name <- factor(df$Biome_name, levels = biome_names[plot_order])
 pvals$Biome_name <- factor(pvals$Biome_name, levels = biome_names[plot_order])
 
+dfn <- df %>%
+  dplyr::full_join(pvals[, c("Biome", "p_value")], by = "Biome") %>%
+  dplyr::mutate(
+    panel = c("Temperate", "(Sub)tropical")[
+      as.numeric(biome_num %in% c(7, 9)) + 1
+      ]
+    ) %>%
+  dplyr::filter(p_value <= 0.05)
+biome_names_ss <- biome_names[which(biome_names %in% unique(dfn$Biome_name))]
+dfn$Biome_name <- factor(
+  dfn$Biome_name,
+  levels = biome_names_ss
+  )
+
+gg_all_signif <- ggplot2::ggplot(
+  data = dfn,
+  ggplot2::aes(
+    x = Year, y = Burn_perc, colour = Biome_name, linetype = p_value > 0.05
+    )
+) +
+  ggplot2::geom_smooth(
+    method = "lm", se = FALSE,
+    linewidth = 1.3
+  ) +
+  ggplot2::geom_line(alpha = 0.3) +
+  ggplot2::geom_point(ggplot2::aes(alpha = 1 - p_value / 2)) +
+  ggplot2::theme_bw(base_size = 16) +
+  ggplot2::ylab("Burned area in %") +
+  ggplot2::theme(legend.position = "none") +
+  ggplot2::facet_wrap(.~panel, scales = "free") +
+  ggplot2::scale_color_manual(
+    values = c(
+      "#098742", "#c7b839", "#9cce4e", "#1f7762", "#087186", "#81c4a1",
+      "#ffa42c", "#ffd338", "#66d0c3", "#cea675", "#bddf98", "#ff2e17", "grey95"
+    )[which(biome_names %in% unique(dfn$Biome_name))]
+  )
+
+ggplot2::ggsave(
+  filename = file.path(dir_fig, "trends", "Significant_combined.svg"),
+  plot = gg_all_signif,
+  width = 8, height = 4
+  )
+
 gg <- ggplot2::ggplot(
   data = df,
   ggplot2::aes(x = Year, y = Burn_perc)
