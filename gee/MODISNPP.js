@@ -1,5 +1,5 @@
 // Years
-var startYear = 2018;
+var startYear = 2001;
 var endYear = 2025;
 
 // Tiles (2 lat × 4 lon)

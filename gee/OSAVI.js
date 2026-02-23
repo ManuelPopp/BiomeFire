@@ -1,6 +1,6 @@
 // Define the time period for the analysis
-var startYear = 2016;
-var endYear = 2018;
+var startYear = 2001;
+var endYear = 2025;
 var startDate = startYear + '-01-01';
 var endDate = endYear + '-12-31';
 

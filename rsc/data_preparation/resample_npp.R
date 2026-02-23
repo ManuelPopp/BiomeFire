@@ -21,6 +21,10 @@ pb <- progress_bar$new(
 )
 for (year in years) {
   foi <- files[grepl(year, files)]
+  if (length(foi) != 8) {
+    cat("Incomplete data for year", year, "\n")
+    next
+  }
   print(paste("\nResampling year:", year))
   f_name <- paste0("npp_before_", year + 1, ".tif")
   dst <- file.path(
@@ -28,16 +32,13 @@ for (year in years) {
     f_name
   )
   if (!file.exists(dst)) {
-    rlist <- lapply(foi, terra::rast)
-    npp <- do.call(terra::merge, rlist) %>%
+    do.call(terra::merge, lapply(foi, terra::rast)) %>%
       terra::project(fire, method = "near") %>%
       terra::resample(fire, method = "near") %>%
       terra::writeRaster(
         dst,
         overwrite = TRUE
       )
-    print(npp)
-    rm(npp)
     gc()
   }
   pb$tick()

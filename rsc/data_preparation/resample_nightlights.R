@@ -1,14 +1,16 @@
 require("terra")
 require("tidyterra")
 
-years <- 2012:2018
+# Note that not all years exist, since the satellite started only in 2014.
+# Missing years will be skipped with a warning. Output should be checked.
+years <- 2001:2025
 
 src_dir <- "/lud11/poppman/data/bff/dat/nightlight_raw"
 dst_dir <- "/lud11/poppman/data/bff/dat/lud11/annual/nightlights_resampled_MODIS"
 
 template <- terra::rast(
   "/lud11/poppman/data/bff/dat/lud11/annual/fire_resampled_MODIS/Fire_2001.tif"
-  ) %>%
+) %>%
   terra::crop(terra::ext(-180, 180, -90, 90))
 
 # Writing annual files
@@ -53,7 +55,7 @@ terra::rast(files) %>%
     filename = file.path(
       sub(
         "annual", "static", sub("_resampled_MODIS", "", dst_dir)
-        ), "nightlights_MODIS.tif"
+      ), "nightlights_MODIS.tif"
     ),
     overwrite = TRUE
   )

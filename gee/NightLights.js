@@ -1,5 +1,5 @@
 var startYear = 2014;
-var endYear = 2018;
+var endYear = 2025;
 
 var exportAnnualComposite = function(year) {
   var yearStr = ee.String(ee.Number(year).format("%d"));

@@ -1,6 +1,6 @@
 // Define the years for computation
 var startYear = 2001;
-var endYear = 2024;
+var endYear = 2025;
 
 // Define tiles (8 tiles: 2 lat × 4 lon)
 var tiles = [

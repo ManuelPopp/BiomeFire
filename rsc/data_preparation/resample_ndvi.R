@@ -29,12 +29,18 @@ for (year in years) {
   
   if (!file.exists(dst)) {
     file_subset <- files[which(grepl(year, basename(files)))]
+    if (length(file_subset) != 8) {
+      cat("Incomplete data for year", year, "\n")
+      next
+    }
     do.call(terra::merge, lapply(X = file_subset, FUN = terra::rast)) %>%
+      terra::project(fire, method = "near") %>%
       terra::resample(fire, method = "near") %>%
+      terra::clamp(lower = -1, upper = 1) %>%
       terra::writeRaster(
-          dst,
-          overwrite = TRUE
-          )
+        dst,
+        overwrite = TRUE
+      )
     gc()
   }
   pb$tick()
