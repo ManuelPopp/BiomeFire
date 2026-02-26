@@ -6,10 +6,8 @@ require("ggplot2")
 
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
-  sub_clim <- "chelsa_kg"
 } else {
   dir_main <- "/lud11/poppman/data/bff"
-  sub_clim <- file.path("lud11", "chelsa_kg")
 }
 
 dir_dat <- file.path(dir_main, "dat")

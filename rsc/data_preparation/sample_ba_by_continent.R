@@ -60,7 +60,7 @@ get_fires <- function(year, extent) {
 #>----------------------------------------------------------------------------<|
 #> Settings
 year_start <- 2002
-year_end <- 2023
+year_end <- 2025
 years <- seq(year_start, year_end)
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -76,7 +76,13 @@ cat("\nBiome:", biome_name, "\n")
 if (Sys.info()["sysname"] == "Windows") {
   dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
 } else {
-  dir_main <- "/lud11/poppman/data/bff"
+  if (dir.exists("/lud11")) {
+    dir_main <- "/lud11/poppman/data/bff"
+  } else if (dir.exists("/shares/lud11")) {
+    dir_main <- "/shares/lud11/poppman/data/bff"
+  } else {
+    stop("/lud11 could not be located.")
+  }
 }
 
 dir_dat <- file.path(dir_main, "dat")

@@ -93,7 +93,7 @@ load_year <- function(year, files, ...) {
 #>----------------------------------------------------------------------------<|
 #> Settings
 if (Sys.info()["sysname"] == "Windows") {
-  dir_main <- "C:/Users/poppman/switchdrive/PhD/prj/bff"
+  dir_main <- "L:/poppman/data/bff"
 } else {
   dir_main <- "/lud11/poppman/data/bff"
 }
