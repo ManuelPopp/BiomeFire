@@ -67,8 +67,10 @@ args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) >= 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[1]))
+  continue <- any(args == "--continue")
 } else {
   biome_name <- "Olson_biome_8"
+  continue <- FALSE
 }
 
 cat("\nBiome:", biome_name, "\n")
@@ -168,7 +170,12 @@ f_out <- file.path(
     dir_imd, biome_name, paste0("annual_ba_per_continent", ".csv")
   )
 
-cat("Biome,Continent,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
+if (continue) {
+  df <- read.csv(f_out)
+  years <- years[which(!years %in% df$Year)]
+} else {
+  cat("Biome,Continent,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
+}
 
 for (year in years) {
   cat("Year:", year, "\n")
@@ -191,6 +198,7 @@ for (year in years) {
         ),
         file = f_out, append = TRUE
       )
+    gc()
   }
 }
 

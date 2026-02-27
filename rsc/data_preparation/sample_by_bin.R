@@ -100,7 +100,7 @@ collapse_bins <- function(r) {
 #>----------------------------------------------------------------------------<|
 #> Settings
 args <- commandArgs(trailingOnly = TRUE)
-continue = any(args == "--continue")
+continue <- any(args == "--continue")
 recalculate <- FALSE
 seed <- 42
 set.seed(seed)
