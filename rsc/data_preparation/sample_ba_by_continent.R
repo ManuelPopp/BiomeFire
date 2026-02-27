@@ -172,17 +172,28 @@ f_out <- file.path(
 
 if (continue) {
   df <- read.csv(f_out)
-  years <- years[which(!years %in% df$Year)]
 } else {
   cat("Biome,Continent,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
 }
 
 for (year in years) {
   cat("Year:", year, "\n")
+  if (continue & all(continent_names %in% df[df$Year == year,]$Continent)) {
+    cat("Continued script, year", year, "already exists. Skipping...")
+    next
+    }
   fires <- get_fires(year = year, extent = extent) %>%
     terra::mask(mask = mask_combined)
   
   for (continent_name in continent_names) {
+    if (continue & continent_name %in% df[df$Year == year,]$Continent) {
+      cat(
+        "Continued script, continent",
+        continent_name,
+        "already exists. Skipping..."
+        )
+      next
+      }
     areas <- fires %>%
       terra::mask(continents[[continent_name]]) %>%
       terra::expanse(unit = "m", byValue = TRUE)
