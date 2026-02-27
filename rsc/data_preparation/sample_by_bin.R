@@ -187,6 +187,8 @@ terra::terraOptions(
   memmax = 500,
   tempdir = temp_dir
   )
+f_tmp_p0 <- file.path(temp_dir, "p0.tif")
+f_tmp_p1 <- file.path(temp_dir, "p1.tif")
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
@@ -425,15 +427,24 @@ for (bin0 in 1:n_bin) {
   print(
     paste("\nCreating predictor mask outer bin", bin0, "of", n_bin)
     )
-  pred_mask_0 <- (predictor_0_binned == bin0) %>%
-    terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
+  pred_mask_0 <- terra::ifel(
+    predictor_0_binned == bin0,
+    1, NA,
+    filename = f_tmp_p0,
+    overwrite = TRUE
+    )
   
   for (bin1 in 1:n_bin) {
     if (bin0 == max(existing_0, 0) && bin1 %in% existing_1) {next}
     print(paste("\nSub-bin", bin1, "of", n_bin))
-    pred_mask_1 <- (predictor_1_binned == bin1) %>%
-      terra::classify(rcl = matrix(c(0, 1, NA, 1), ncol = 2))
-    
+    pred_mask_1 <- terra::ifel(
+      predictor_1_binned == bin1,
+      1,
+      NA,
+      filename = f_tmp_p1,
+      overwrite = TRUE
+      )
+    print("Combining predictor masks...")
     pred_mask_combined <- c(pred_mask_0, pred_mask_1) %>%
       terra::app(fun = "anyNA") %>%
       terra::classify(rcl = matrix(c(0, 1, 1, NA), ncol = 2))
@@ -489,5 +500,7 @@ unlink(file.path(temp_dir, "mask_combined.tif"))
 unlink(file.path(temp_dir, "predictor_0_binned.tif"))
 unlink(file.path(temp_dir, "predictor_1_binned.tif"))
 unlink(file.path(temp_dir, "mask_comb.tif"))
+unlink(f_tmp_p0)
+unlink(f_tmp_p1)
 terra::tmpFiles(remove = TRUE)
 gc()
