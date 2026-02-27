@@ -170,15 +170,15 @@ f_out <- file.path(
     dir_imd, biome_name, paste0("annual_ba_per_continent", ".csv")
   )
 
-if (continue) {
-  df <- read.csv(f_out)
-} else {
+if (!continue) {
   cat("Biome,Continent,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
+  
 }
+df <- read.csv(f_out)
 
 for (year in years) {
   cat("Year:", year, "\n")
-  if (continue & all(continent_names %in% df[df$Year == year,]$Continent)) {
+  if (all(continent_names %in% df[df$Year == year,]$Continent)) {
     cat("Continued script, year", year, "already exists. Skipping...")
     next
     }
@@ -186,7 +186,7 @@ for (year in years) {
     terra::mask(mask = mask_combined)
   
   for (continent_name in continent_names) {
-    if (continue & continent_name %in% df[df$Year == year,]$Continent) {
+    if (continent_name %in% df[df$Year == year,]$Continent) {
       cat(
         "Continued script, continent",
         continent_name,
@@ -198,8 +198,8 @@ for (year in years) {
       terra::mask(continents[[continent_name]]) %>%
       terra::expanse(unit = "m", byValue = TRUE)
     
-    nonburned <- areas$area[1]
-    burned <- areas$area[2]
+    nonburned <- ifelse(length(areas$area) >= 1, areas$area[1], NA)
+    burned <- ifelse(length(areas$area) >= 2, areas$area[2], NA)
     
     cat("Burned:", burned, "\nNonburned:", nonburned, "\n")
     cat(
