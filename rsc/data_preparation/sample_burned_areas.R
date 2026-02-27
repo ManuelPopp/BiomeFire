@@ -66,8 +66,10 @@ args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) >= 1) {
   biome_name <- paste0("Olson_biome_", as.character(args[1]))
+  continue <- any(args == "--continue")
 } else {
   biome_name <- "Olson_biome_8"
+  continue <- FALSE
 }
 
 cat("\nBiome:", biome_name, "\n")
@@ -147,10 +149,17 @@ f_out <- file.path(
     dir_imd, biome_name, paste0("annual_burned_area", ".csv")
   )
 
-cat("Biome,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
+if (!continue) {
+  cat("Biome,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
+}
+df <- read.csv(f_out)
 
 for (year in years) {
   cat("Year:", year, "\n")
+  if (year %in% df$Year) {
+    cat("\nContinued script, year", year, "already exists. Skipping...")
+    next
+  }
   areas <- get_fires(year = year, extent = extent) %>%
     terra::mask(mask = mask_combined) %>%
     terra::expanse(unit = "m", byValue = TRUE)
@@ -162,7 +171,7 @@ for (year in years) {
   cat(
     paste0(paste(biome_name, year, burned, nonburned, sep = ","), "\n"),
     file = f_out, append = TRUE
-    )
+  )
 }
 
 print("Finished.")

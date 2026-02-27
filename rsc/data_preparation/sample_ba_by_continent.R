@@ -172,7 +172,6 @@ f_out <- file.path(
 
 if (!continue) {
   cat("Biome,Continent,Year,Burned,Nonburned\n", file = f_out, append = FALSE)
-  
 }
 df <- read.csv(f_out)
 
