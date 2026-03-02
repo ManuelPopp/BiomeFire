@@ -199,7 +199,7 @@ f_tmp_p1 <- file.path(temp_dir, "p1.tif")
 f_ext <- file.path(temp_dir, "ext.rds")
 if (!file.exists(f_ext)) {
   # Get biome extent and sampling area extent
-  print("\nGet study extent...")
+  cat("\nGet study extent...")
   biome_extent <- terra::rast(f_biome) %>%
     terra::trim() %>%
     terra::ext()
@@ -236,7 +236,7 @@ for (
   gc()
 }
 
-print("Loading cropped layers...")
+cat("<nLoading cropped layers...")
 biome_cropped <- terra::rast(f_biome_cropped)
 pft_cropped <- terra::rast(f_pft_cropped)
 
@@ -255,7 +255,7 @@ if (!file.exists(f_fire_proj)) {
   fire_cropped <- terra::rast(f_fire_proj)
 }
 
-print("\nCombining mask layers...")
+cat("\nCombining mask layers...")
 if (!file.exists(file.path(temp_dir, "mask_combined.tif")) | recalculate) {
   # define extents
   ext_w = terra::ext(-180, 0, -90, 90) %>% terra::intersect(extent)
@@ -446,9 +446,7 @@ if (!is.null(df_out) && nrow(df_out) > 0) {
 for (bin0 in 1:n_bin) {
   if (bin0 < max(existing_0, 0)) {next}
   # Create combined mask
-  print(
-    paste("\nCreating predictor mask outer bin", bin0, "of", n_bin)
-    )
+  cat("\nCreating predictor mask outer bin", bin0, "of", n_bin)
   pred_mask_0 <- terra::ifel(
     predictor_0_binned == bin0,
     1, NA,
@@ -458,7 +456,7 @@ for (bin0 in 1:n_bin) {
   
   for (bin1 in 1:n_bin) {
     if (bin0 == max(existing_0, 0) && bin1 %in% existing_1) {next}
-    print(paste("\nSub-bin", bin1, "of", n_bin))
+    cat("\nSub-bin", bin1, "of", n_bin)
     pred_mask_1 <- terra::ifel(
       predictor_1_binned == bin1,
       1,
@@ -466,7 +464,7 @@ for (bin0 in 1:n_bin) {
       filename = f_tmp_p1,
       overwrite = TRUE
       )
-    print("Combining predictor masks...")
+    cat("\nCombining predictor masks...")
     pred_mask_combined <- c(pred_mask_0, pred_mask_1) %>%
       terra::app(fun = "anyNA") %>%
       terra::classify(rcl = matrix(c(0, 1, 1, NA), ncol = 2))
