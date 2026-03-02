@@ -181,10 +181,14 @@ f_pft <- file.path(
 
 terra::gdalCache(size = 32768)
 
-temp_dir <- file.path("/lud11/poppman/tmp", biome_name)
+temp_dir <- ifelse(
+  Sys.info()["sysname"] == "Windows",
+  file.path("L:/poppman/tmp", biome_name),
+  file.path("/lud11/poppman/tmp", biome_name)
+)
 dir.create(temp_dir, showWarnings = FALSE)
 terra::terraOptions(
-  memmax = 500,
+  memmax = 300,
   tempdir = temp_dir
   )
 f_tmp_p0 <- file.path(temp_dir, "p0.tif")
@@ -192,37 +196,64 @@ f_tmp_p1 <- file.path(temp_dir, "p1.tif")
 
 #>----------------------------------------------------------------------------<|
 #> Load fire and mask layers
-fire <- terra::rast(f_fire)
-pft <- terra::rast(f_pft)
-biome <- terra::rast(f_biome)
+f_ext <- file.path(temp_dir, "ext.rds")
+if (!file.exists(f_ext)) {
+  # Get biome extent and sampling area extent
+  print("\nGet study extent...")
+  biome_extent <- terra::rast(f_biome) %>%
+    terra::trim() %>%
+    terra::ext()
+  
+  extent <- terra::rast(f_pft) %>%
+    terra::crop(biome_extent) %>%
+    terra::trim() %>%
+    terra::ext()
+  
+  base::saveRDS(as.vector(extent), f_ext)
+} else {
+  extent <- base::readRDS(f_ext) %>%
+    terra::ext()
+}
 
-# Get biome extent and sampling area extent
-print("\nGet study extent...")
-biome_extent <- terra::trim(biome) %>%
-  terra::ext()
-
-extent <- terra::crop(pft, biome_extent) %>%
-  terra::trim() %>%
-  terra::ext()
-
-# Crop layers
-print("\nCropping layers...")
-fire_cropped <- terra::crop(fire, extent) %>%
-  terra::project(
-    "epsg:8857",
-    method = "near"
+f_fire_cropped <- file.path(temp_dir, "fire_cropped.tif")
+f_biome_cropped <- file.path(temp_dir, "biome_cropped.tif")
+f_pft_cropped <- file.path(temp_dir, "pft_cropped.tif")
+for (
+  ds in list(
+    c(f_biome, f_biome_cropped),
+    c(f_pft, f_pft_cropped)
+  )
+) {
+  if (!file.exists(ds[2])) {
+    terra::rast(ds[1]) %>%
+      terra::crop(
+      extent,
+      filename = ds[2],
+      datatype = "INT1U",
+      overwrite = TRUE
     )
-biome_cropped <- terra::crop(
-  biome, extent
-  )
-pft_cropped <- terra::crop(
-  pft, extent
-  )
+  }
+  gc()
+}
 
-rm(fire)
-rm(biome)
-rm(pft)
-gc()
+print("Loading cropped layers...")
+biome_cropped <- terra::rast(f_biome_cropped)
+pft_cropped <- terra::rast(f_pft_cropped)
+
+f_fire_proj <- file.path(temp_dir, "fire_proj.tif")
+if (!file.exists(f_fire_proj)) {
+  fire_cropped <- terra::rast(f_fire) %>%
+    terra::crop(extent) %>%
+    terra::project(
+      "epsg:8857",
+      method = "near",
+      filename = f_fire_cropped,
+      datatype = "INT1U",
+      overwrite = TRUE
+    )
+} else {
+  fire_cropped <- terra::rast(f_fire_proj)
+}
 
 print("\nCombining mask layers...")
 if (!file.exists(file.path(temp_dir, "mask_combined.tif")) | recalculate) {
@@ -241,66 +272,57 @@ if (!file.exists(file.path(temp_dir, "mask_combined.tif")) | recalculate) {
       terra::crop(pft_cropped, ext_w)
     ) %>%
       terra::app(fun = "anyNA") %>%
-      terra::writeRaster(
+      terra::classify(
+        rcl = matrix(c(0, 1, 1, NA), ncol = 2),
         filename = file.path(temp_dir, "mask_w.tif"),
-        datatype = "INT1U",
-        overwrite = TRUE
+        overwrite = TRUE,
+        datatype = "INT1U"
       )
-}
-
-print("Producing East half")
-# east
-if (!is.null(ext_e)) {
-  c(
-    terra::crop(biome_cropped, ext_e),
-    terra::crop(pft_cropped, ext_e)
-  ) %>%
-    terra::app(fun = "anyNA") %>%
-    terra::writeRaster(
-      filename = file.path(temp_dir, "mask_e.tif"),
-      datatype = "INT1U",
-      overwrite = TRUE
+  }
+  
+  print("Producing East half")
+  # east
+  if (!is.null(ext_e)) {
+    c(
+      terra::crop(biome_cropped, ext_e),
+      terra::crop(pft_cropped, ext_e)
+    ) %>%
+      terra::app(fun = "anyNA") %>%
+      terra::classify(
+        rcl = matrix(c(0, 1, 1, NA), ncol = 2),
+        filename = file.path(temp_dir, "mask_e.tif"),
+        overwrite = TRUE,
+        datatype = "INT1U"
+      )
+  }
+  
+  print("Merging to disc...")
+  # merge directly to disk
+  if (is.null(ext_w)) {
+    file.copy(
+      file.path(temp_dir, "mask_e.tif"),
+      file.path(temp_dir, "mask_combined.tif")
+      )
+  } else if (is.null(ext_e)) {
+    file.copy(
+      file.path(temp_dir, "mask_w.tif"),
+      file.path(temp_dir, "mask_combined.tif")
     )
-}
-
-print("Merging to disc...")
-# merge directly to disk
-if (is.null(ext_w)) {
-  file.copy(
-    file.path(temp_dir, "mask_e.tif"),
-    file.path(temp_dir, "mask_comb.tif")
+  } else {
+    terra::merge(
+      terra::rast(file.path(temp_dir, "mask_w.tif")),
+      terra::rast(file.path(temp_dir, "mask_e.tif")),
+      filename = file.path(temp_dir, "mask_combined.tif"),
+      overwrite = TRUE,
+      wopt = list(datatype = "INT1U")
     )
-} else if (is.null(ext_e)) {
-  file.copy(
-    file.path(temp_dir, "mask_w.tif"),
-    file.path(temp_dir, "mask_comb.tif")
-  )
-} else {
-  terra::merge(
-    terra::rast(file.path(temp_dir, "mask_w.tif")),
-    terra::rast(file.path(temp_dir, "mask_e.tif")),
-    filename = file.path(temp_dir, "mask_comb.tif"),
-    overwrite = TRUE,
-    wopt = list(datatype = "INT1U")
-  )
+  }
+  rm(biome_cropped)
+  rm(pft_cropped)
+  gc()
 }
 
-mask_combined_rw <- terra::rast(file.path(temp_dir, "mask_comb.tif"))
-
-print("\nReclassifying mask...")
-terra::classify(
-  mask_combined_rw,
-  rcl = matrix(c(0, 1, 1, NA), ncol = 2),
-  filename = file.path(temp_dir, "mask_combined.tif"),
-  overwrite = TRUE,
-  datatype = "INT1U"
-  )
 mask_combined <- terra::rast(file.path(temp_dir, "mask_combined.tif"))
-}
-rm(mask_combined_rw)
-rm(biome_cropped)
-rm(pft_cropped)
-gc()
 
 #>----------------------------------------------------------------------------<|
 #> Load environmental variables
